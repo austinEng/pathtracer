@@ -2,11 +2,13 @@
 file(GLOB ae_graphics_headers
   core/*.h
   spatial_acceleration/*.h  
+  intersection/*.h
 )
 
 file(GLOB ae_graphics_source
   core/*.cc
   spatial_acceleration/*.cc  
+  intersection/*.cc
 )
 
 configure_file("config.inl" "${CMAKE_CURRENT_BINARY_DIR}/config_impl.h")

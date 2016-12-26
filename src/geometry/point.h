@@ -8,6 +8,20 @@ struct Point {
   Point() {
     std::memset(vals, 0, D * sizeof(T));
   }
+  
+  template<typename... Ts>
+  Point(Ts... args) {
+    static T init[D] = {args...};
+    memcpy(vals, init, D*sizeof(T));
+  }
+
+  T operator[](unsigned int i) const {
+    return vals[i];
+  }
+
+  T& operator[](unsigned int i) {
+    return vals[i];
+  }
 };
 
 typedef Point<1, float> Point1f;

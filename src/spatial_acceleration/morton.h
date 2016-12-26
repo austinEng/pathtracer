@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <core/point.h>
+#include <geometry/point.h>
 
 template <unsigned int D, typename T, typename C>
 struct Morton {

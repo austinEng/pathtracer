@@ -83,7 +83,6 @@ typename BVHTree<D, T>::node_t* BVHTree<D, T>::recbuild(std::vector<Primitive> &
     }
 
     case LBVH: {
-      // MORTON(D) morton;
       Morton<3, float, unsigned int> morton;
       break;
     }  

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "bound.h"
-#include <core/point.h>
+#include <geometry/point.h>
 
 template <unsigned int D, typename T>
 class Boundable {

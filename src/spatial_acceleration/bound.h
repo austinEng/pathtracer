@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <limits>
-#include <core/point.h>
+#include <geometry/point.h>
 
 template <unsigned int D, typename T>
 class Bound {
@@ -12,13 +12,6 @@ private:
 
 public:
 
-  // struct Point {
-  //   T vals[D];
-
-  //   Point() {
-  //     std::memset(vals, 0, D * sizeof(T));
-  //   }
-  // };
   typedef Point<D, T> point_t;
 
   Bound() {
