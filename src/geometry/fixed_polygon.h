@@ -14,7 +14,7 @@ class FixedPolygon : public Primitive<D, T> {
   typedef Vector<D, T> point_t;
   FixedPolygon() {}
 
-  point_t points[C];
+  point_t points[C];  // counter-clockwise winding order
   point_t normals[C];
 };
 

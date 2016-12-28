@@ -3,15 +3,15 @@
 
 #include <core/vector.h>
 
-template <unsigned int D, typename T>
+template <typename T>
 struct Ray {
-  Vector<D, T> pos;
-  Vector<D, T> dir;
+  Vector3<T> pos;
+  Vector3<T> dir;
 
   template<typename... Ts>
   Ray(Ts... args) {
-    static T init[2*D] = {args...};
-    memcpy(pos.vals, init, D*sizeof(T));
-    memcpy(dir.vals, init + D, D*sizeof(T));
+    static T init[2*3] = {args...};
+    memcpy(pos.vals, init, 3*sizeof(T));
+    memcpy(dir.vals, init + 3, 3*sizeof(T));
   }
 };

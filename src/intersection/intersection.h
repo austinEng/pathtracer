@@ -1,11 +1,13 @@
 
 #pragma once
 
-template <unsigned int D, typename T>
+template <typename T>
 struct Intersection {
-  Vector<D, T> point;
-  Vector<D, T> normal;
-  Vector<D, T> tangent;
-  Vector<D, T> binormal;
+  Vector3<T> point;
+  Vector3<T> normal;
+  Vector3<T> tangent;
+  Vector3<T> binormal;
   T t;
+  bool backface;
+  bool hit = false;
 };

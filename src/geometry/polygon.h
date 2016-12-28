@@ -18,6 +18,6 @@ class Polygon : public Primitive<D, T> {
     normals.resize(count);
   }
 
-  std::vector<point_t> points;
+  std::vector<point_t> points; // counter-clockwise winding order
   std::vector<point_t> normals;
 };

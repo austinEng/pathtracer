@@ -27,6 +27,18 @@ struct Vector {
   }
 };
 
+template <typename T>
+using Vector1 = Vector<1, T>;
+
+template <typename T>
+using Vector2 = Vector<2, T>;
+
+template <typename T>
+using Vector3 = Vector<3, T>;
+
+template <typename T>
+using Vector4 = Vector<4, T>;
+
 typedef Vector<1, float> Vector1f;
 typedef Vector<2, float> Vector2f;
 typedef Vector<3, float> Vector3f;

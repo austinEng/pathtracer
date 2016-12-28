@@ -5,16 +5,16 @@
 #include "ray.h"
 #include "intersection.h"
 
-template <unsigned int D, typename T>
+template <typename T>
 class IntersectableInterface {
-
-  virtual Intersection<D, T> GetIntersection(const Ray<D, T>& ray) const = 0;
+  
+  virtual Intersection<T> GetIntersection(const Ray<T>& ray) const = 0;
 
 };
 
-template <typename G>
+template <typename G, typename T = typename G::val_t>
 class IntersectableBase : 
   public Boundable<G>, 
-  public IntersectableInterface<G::dim, typename G::val_t> {
+  public IntersectableInterface<T> {
 
 };

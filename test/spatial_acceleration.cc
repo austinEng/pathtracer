@@ -26,7 +26,8 @@ int main(int argc, char** argv) {
   std::vector<tinyobj::material_t> materials;
 
   std::string err;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, argv[1]);
+  int flags = 2;
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, argv[1], NULL, flags);
 
   if (!err.empty()) { // `err` may contain warning message.
     std::cerr << err << std::endl;
@@ -71,6 +72,7 @@ int main(int argc, char** argv) {
         }
 
         p->points.emplace_back(vx, vy, vz);
+        p->normals.emplace_back(nx, ny, nz);
       }
       index_offset += fv;
 
