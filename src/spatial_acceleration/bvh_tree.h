@@ -8,7 +8,7 @@ class BVHTree : public SpatialTree<D, T> {
   public:
   
   typedef Bound<D, T> bound_t;
-  typedef Boundable<D, T> object_t;
+  typedef BoundableInterface<D, T> object_t;
   typedef typename SpatialTree<D, T>::Node node_t;
 
   enum Mode {
@@ -23,7 +23,7 @@ class BVHTree : public SpatialTree<D, T> {
 
   struct Primitive {
     bound_t bound;
-    Point<D, T> centroid;
+    Vector<D, T> centroid;
     std::shared_ptr<object_t> object;
 
     Primitive(std::shared_ptr<object_t> &obj) {

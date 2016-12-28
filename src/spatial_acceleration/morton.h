@@ -1,12 +1,12 @@
 
 #pragma once
 
-#include <geometry/point.h>
+#include <core/vector.h>
 
 template <unsigned int D, typename T, typename C>
 struct Morton {
   typedef C code_t;
-  typedef Point<D, T> point_t;
+  typedef Vector<D, T> point_t;
 
   static inline unsigned int expandBits(unsigned int v);
 

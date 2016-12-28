@@ -4,6 +4,7 @@
 #include <tiny_obj_loader.h>
 
 #include <geometry/polygon.h>
+#include <intersection/geometry.h>
 #include <spatial_acceleration/geometry.h>
 #include <spatial_acceleration/bound.h>
 #include <spatial_acceleration/bvh_tree.h>
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
   
   typedef Polygon<3, float> polygon_t;
 
-  std::vector<std::shared_ptr<Boundable<3, float>>> polygons;
+  std::vector<std::shared_ptr<BoundableInterface<3, float>>> polygons;
 
   std::cout << "Loading obj file " << argv[1] << std::endl;
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
     for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
       unsigned int fv = shapes[s].mesh.num_face_vertices[f];
 
-      std::shared_ptr<Bounded<polygon_t>> p = std::make_shared<Bounded<polygon_t>>(fv);
+      std::shared_ptr<Intersectable<polygon_t>> p = std::make_shared<Intersectable<polygon_t>>(fv);
       polygons.push_back(p);
 
       // Loop over vertices in the face.

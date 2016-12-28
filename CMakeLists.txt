@@ -31,6 +31,13 @@ add_subdirectory(src)
 
 enable_testing()
 
+add_executable(la_test test/la.cc)
+target_link_libraries(la_test ae_graphics)
+add_test(
+  NAME la_test
+  COMMAND build/la_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_executable(spatial_acceleration_test test/spatial_acceleration.cc)
 target_link_libraries(spatial_acceleration_test ae_graphics tinyobjloader)
 add_test(

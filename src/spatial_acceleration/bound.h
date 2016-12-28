@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <limits>
-#include <geometry/point.h>
+#include <core/vector.h>
 
 template <unsigned int D, typename T>
 class Bound {
@@ -12,7 +12,7 @@ private:
 
 public:
 
-  typedef Point<D, T> point_t;
+  typedef Vector<D, T> point_t;
 
   Bound() {
     for (unsigned int d = 0; d < D; ++d) {

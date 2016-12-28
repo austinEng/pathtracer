@@ -5,13 +5,11 @@
 #include "boundable.h"
 
 template <typename G>
-class Bounded { };
+class Boundable { };
 
 template <unsigned int D, typename T>
-class Bounded<Polygon<D, T>> : 
-  public Polygon<D, T>,
-  public Boundable<Polygon<D, T>::dim, typename Polygon<D, T>::val_t> {
-  
+class Boundable<Polygon<D, T>> : public BoundableBase<Polygon<D, T>> {
+
   using Polygon<D,T>::Polygon;
 
   public:
@@ -38,8 +36,8 @@ class Bounded<Polygon<D, T>> :
     return bound;
   }
 
-  virtual Point<D, T> GetCentroid() const {
-    Point<D, T> centroid;
+  virtual Vector<D, T> GetCentroid() const {
+    Vector<D, T> centroid;
 
     for (unsigned int c = 0; c < this->points.size(); ++c) {
       for (unsigned int d = 0; d < D; ++d) {
@@ -53,9 +51,8 @@ class Bounded<Polygon<D, T>> :
 };
 
 template <unsigned int C, unsigned int D, typename T>
-class Bounded<FixedPolygon<C, D, T>> : 
-  public FixedPolygon<C, D, T>,
-  public Boundable<FixedPolygon<C, D, T>::dim, typename FixedPolygon<C, D, T>::val_t> {
+class Boundable<FixedPolygon<C, D, T>> : 
+  public BoundableBase<FixedPolygon<C, D, T>> {
   
   using FixedPolygon<C, D, T>::FixedPolygon;
 
@@ -83,8 +80,8 @@ class Bounded<FixedPolygon<C, D, T>> :
     return bound;
   }
 
-  virtual Point<D, T> GetCentroid() const {
-    Point<D, T> centroid;
+  virtual Vector<D, T> GetCentroid() const {
+    Vector<D, T> centroid;
 
     for (unsigned int c = 0; c < C; ++c) {
       for (unsigned int d = 0; d < D; ++d) {
@@ -95,16 +92,4 @@ class Bounded<FixedPolygon<C, D, T>> :
     return centroid;
   }
   
-};
-
-template <unsigned int D, typename T>
-class Bounded<Triangle<D,T>> :
-  public Triangle<D, T>,
-  public Bounded<FixedPolygon<3,D,T>> {
-};
-
-template <unsigned int D, typename T>
-class Bounded<Quad<D,T>> :
-  public Quad<D, T>,
-  public Bounded<FixedPolygon<4,D,T>> {
 };

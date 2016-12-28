@@ -11,7 +11,7 @@ class SpatialTree {
 public:
 
   typedef Bound<D, T> bound_t;
-  typedef Boundable<D, T> object_t;
+  typedef BoundableInterface<D, T> object_t;
 
   class alignas(64) Node {
     public:
