@@ -1,23 +1,19 @@
 
 #pragma once
 
-#include <core/vector.h>
+#include <glm/vec3.hpp>
 #include "primitive.h"
 
-template <unsigned int D, typename T>
-class Polygon : public Primitive<D, T> {
+class Polygon : public Primitive {
   
   public:
-  typedef T val_t;
-  static const unsigned int dim = D;
 
-  typedef Vector<D, T> point_t;
   Polygon() {}
   Polygon(unsigned int count) {
     points.resize(count);
     normals.resize(count);
   }
 
-  std::vector<point_t> points; // counter-clockwise winding order
-  std::vector<point_t> normals;
+  std::vector<glm::vec3> points; // counter-clockwise winding order
+  std::vector<glm::vec3> normals;
 };

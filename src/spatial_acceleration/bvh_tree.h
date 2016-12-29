@@ -3,13 +3,12 @@
 
 #include "spatial_tree.h"
 
-template <int D, typename T>
-class BVHTree : public SpatialTree<D, T> {
+class BVHTree : public SpatialTree {
   public:
   
-  typedef Bound<D, T> bound_t;
-  typedef BoundableInterface<D, T> object_t;
-  typedef typename SpatialTree<D, T>::Node node_t;
+  typedef Bound bound_t;
+  typedef BoundableInterface object_t;
+  typedef SpatialTree::Node node_t;
 
   enum Mode {
     SAH, // http://www.sci.utah.edu/~wald/Publications/2007/ParallelBVHBuild/fastbuild.pdf
@@ -23,7 +22,7 @@ class BVHTree : public SpatialTree<D, T> {
 
   struct Primitive {
     bound_t bound;
-    Vector<D, T> centroid;
+    glm::vec3 centroid;
     std::shared_ptr<object_t> object;
 
     Primitive(std::shared_ptr<object_t> &obj) {

@@ -6,12 +6,11 @@
 #include <vector>
 #include <memory>
 
-template <int D, typename T>
 class SpatialTree {
 public:
 
-  typedef Bound<D, T> bound_t;
-  typedef BoundableInterface<D, T> object_t;
+  typedef Bound bound_t;
+  typedef BoundableInterface object_t;
 
   class alignas(64) Node {
     public:
@@ -20,9 +19,9 @@ public:
     bound_t bound;
 
     Node(Node* left, Node* right) : children {left, right} {
-      bound = Bound<D, T>::Union(
-        left != nullptr ? left->bound : Bound<D, T>(), 
-        right != nullptr ? right->bound : Bound<D, T>()
+      bound = Bound::Union(
+        left != nullptr ? left->bound : Bound(), 
+        right != nullptr ? right->bound : Bound()
       );
     }
 

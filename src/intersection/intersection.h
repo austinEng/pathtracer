@@ -1,13 +1,14 @@
 
 #pragma once
 
-template <typename T>
+#include <glm/vec3.hpp>
+
 struct Intersection {
-  Vector3<T> point;
-  Vector3<T> normal;
-  Vector3<T> tangent;
-  Vector3<T> binormal;
-  T t;
-  bool backface;
+  glm::vec3 point;
+  glm::vec3 normal;
+  // Vector3<T> tangent;
+  // Vector3<T> binormal;
+  float t;
+  // bool backface;
   bool hit = false;
 };

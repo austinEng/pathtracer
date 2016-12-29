@@ -1,25 +1,19 @@
 
 #pragma once
 
-#include <core/vector.h>
+#include <glm/vec3.hpp>
 #include "primitive.h"
 
-template <unsigned int C, unsigned int D, typename T>
-class FixedPolygon : public Primitive<D, T> {
+template <unsigned int C>
+class FixedPolygon : public Primitive {
 
   public:
-  typedef T val_t;
-  static const unsigned int dim = D;
 
-  typedef Vector<D, T> point_t;
   FixedPolygon() {}
 
-  point_t points[C];  // counter-clockwise winding order
-  point_t normals[C];
+  glm::vec3 points[C];  // counter-clockwise winding order
+  glm::vec3 normals[C];
 };
 
-template <unsigned int D, typename T>
-using Triangle = FixedPolygon<3, D, T>;
-
-template <unsigned int D, typename T>
-using Quad = FixedPolygon<4, D, T>;
+using Triangle = FixedPolygon<3>;
+using Quad = FixedPolygon<4>;

@@ -19,6 +19,7 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -funroll-loops -ftree-vectorize")
 
+add_subdirectory(ext/glm)
 add_subdirectory(ext/tinyobjloader)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -fopt-info-vec-optimized -ftree-vectorizer-verbose=3")
@@ -30,13 +31,6 @@ set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_T
 add_subdirectory(src)
 
 enable_testing()
-
-add_executable(la_test test/la.cc)
-target_link_libraries(la_test ae_graphics)
-add_test(
-  NAME la_test
-  COMMAND build/la_test
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(spatial_acceleration_test test/spatial_acceleration.cc)
 target_link_libraries(spatial_acceleration_test ae_graphics tinyobjloader)

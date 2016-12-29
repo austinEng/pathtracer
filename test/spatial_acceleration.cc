@@ -8,6 +8,7 @@
 #include <spatial_acceleration/geometry.h>
 #include <spatial_acceleration/bound.h>
 #include <spatial_acceleration/bvh_tree.h>
+#include <raytrace/context.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -15,9 +16,9 @@ int main(int argc, char** argv) {
     return 1;
   }
   
-  typedef Polygon<3, float> polygon_t;
+  typedef Polygon polygon_t;
 
-  std::vector<std::shared_ptr<BoundableInterface<3, float>>> polygons;
+  std::vector<std::shared_ptr<BoundableInterface>> polygons;
 
   std::cout << "Loading obj file " << argv[1] << std::endl;
 
@@ -81,8 +82,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  BVHTree<3, float> tree;
-  tree.build(polygons);
+  rt::Context rtContext;
+  rtContext.initialize(polygons);
 
   return 0;
 }

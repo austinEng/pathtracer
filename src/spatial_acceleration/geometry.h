@@ -7,28 +7,28 @@
 template <typename G>
 class Boundable { };
 
-template <unsigned int D, typename T>
-class Boundable<Polygon<D, T>> : public BoundableBase<Polygon<D, T>> {
+template<>
+class Boundable<Polygon> : public BoundableBase<Polygon> {
 
-  using Polygon<D,T>::Polygon;
+  using Polygon::Polygon;
 
   public:
   
-  virtual Bound<D, T> GetBound() const {
-    Bound<D, T> bound;
+  virtual Bound GetBound() const {
+    Bound bound;
 
-    for (unsigned int d = 0; d < D; ++d) {
+    for (unsigned int d = 0; d < 3; ++d) {
       bound.min(d) = this->points[0][d];
     }
-    for (unsigned int d = 0; d < D; ++d) {
+    for (unsigned int d = 0; d < 3; ++d) {
       bound.max(d) = this->points[0][d];
     }
 
     for (unsigned int c = 1; c < this->points.size(); ++c) {
-      for (unsigned int d = 0; d < D; ++d) {
+      for (unsigned int d = 0; d < 3; ++d) {
         if (this->points[c][d] < bound.min(d)) bound.min(d) = this->points[c][d];
       }
-      for (unsigned int d = 0; d < D; ++d) {
+      for (unsigned int d = 0; d < 3; ++d) {
         if (this->points[c][d] > bound.max(d)) bound.max(d) = this->points[c][d];
       }
     }
@@ -36,11 +36,11 @@ class Boundable<Polygon<D, T>> : public BoundableBase<Polygon<D, T>> {
     return bound;
   }
 
-  virtual Vector<D, T> GetCentroid() const {
-    Vector<D, T> centroid;
+  virtual glm::vec3 GetCentroid() const {
+    glm::vec3 centroid;
 
     for (unsigned int c = 0; c < this->points.size(); ++c) {
-      for (unsigned int d = 0; d < D; ++d) {
+      for (unsigned int d = 0; d < 3; ++d) {
         centroid[d] += this->points[c][d] / this->points.size();
       }
     }
@@ -50,29 +50,29 @@ class Boundable<Polygon<D, T>> : public BoundableBase<Polygon<D, T>> {
   
 };
 
-template <unsigned int C, unsigned int D, typename T>
-class Boundable<FixedPolygon<C, D, T>> : 
-  public BoundableBase<FixedPolygon<C, D, T>> {
+template <unsigned int C>
+class Boundable<FixedPolygon<C>> : 
+  public BoundableBase<FixedPolygon<C>> {
   
-  using FixedPolygon<C, D, T>::FixedPolygon;
+  using FixedPolygon<C>::FixedPolygon;
 
   public:
   
-  virtual Bound<D, T> GetBound() const {
-    Bound<D, T> bound;
+  virtual Bound GetBound() const {
+    Bound bound;
 
-    for (unsigned int d = 0; d < D; ++d) {
+    for (unsigned int d = 0; d < 3; ++d) {
       bound.min(d) = this->points[0][d];
     }
-    for (unsigned int d = 0; d < D; ++d) {
+    for (unsigned int d = 0; d < 3; ++d) {
       bound.max(d) = this->points[0][d];
     }
 
     for (unsigned int c = 1; c < C; ++c) {
-      for (unsigned int d = 0; d < D; ++d) {
+      for (unsigned int d = 0; d < 3; ++d) {
         if (this->points[c][d] < bound.min(d)) bound.min(d) = this->points[c][d];
       }
-      for (unsigned int d = 0; d < D; ++d) {
+      for (unsigned int d = 0; d < 3; ++d) {
         if (this->points[c][d] > bound.max(d)) bound.max(d) = this->points[c][d];
       }
     }
@@ -80,11 +80,11 @@ class Boundable<FixedPolygon<C, D, T>> :
     return bound;
   }
 
-  virtual Vector<D, T> GetCentroid() const {
-    Vector<D, T> centroid;
+  virtual glm::vec3 GetCentroid() const {
+    glm::vec3 centroid;
 
     for (unsigned int c = 0; c < C; ++c) {
-      for (unsigned int d = 0; d < D; ++d) {
+      for (unsigned int d = 0; d < 3; ++d) {
         centroid[d] += this->points[c][d] / C;
       }
     }

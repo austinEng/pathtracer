@@ -1,34 +1,28 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
 #include <geometry/geometry.h>
 #include <spatial_acceleration/geometry.h>
 #include "intersectable.h"
 #include "intersection.h"
-#include <core/la.h>
+#include <core/util.h>
 
-template <typename T>
-Intersection<T> TriangleIntersection(
-    const Ray<T> &ray, const Vector3<T> &p1, const Vector3<T> &p2, const Vector3<T> &p3) {
-  Vector3<T> cross = Cross(
-    p2 - p1, 
-    p3 - p2
-  );
-  T area = Length(cross) / 2;
-  Vector3<T> N = Normalize(cross);
-  
-  Vector3<T> toSurface = p1 - ray.pos;
+Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
+  glm::vec3 cross = glm::cross(p2 - p1, p3 - p2);
+  float area = glm::length(cross) / 2.f;
+  glm::vec3 N = glm::normalize(cross);
+  glm::vec3 toSurface = p1 - ray.pos;
 
-  Intersection<T> inter;
-  inter.backface = Dot(N, ray.dir) > 0;
-  inter.t = Dot(N, toSurface) / Dot(N, ray.dir);
+  Intersection inter;
+  inter.t = glm::dot(N, toSurface) / glm::dot(N, ray.dir);
   inter.normal = N;
   inter.point = ray.pos + inter.t * ray.dir;
-  
-  T a1 = Length(Cross(p1 - inter.point, p2 - inter.point)) / 2;
-  T a2 = Length(Cross(p2 - inter.point, p3 - inter.point)) / 2;
-  T a3 = Length(Cross(p3 - inter.point, p1 - inter.point)) / 2;
-  
+
+  float a1 = glm::length(glm::cross(p1 - inter.point, p2 - inter.point)) / 2.f;
+  float a2 = glm::length(glm::cross(p2 - inter.point, p3 - inter.point)) / 2.f;
+  float a3 = glm::length(glm::cross(p3 - inter.point, p1 - inter.point)) / 2.f;
+
   inter.hit = fequal(a1 + a2 + a3, area);
 
   return inter;
@@ -37,18 +31,17 @@ Intersection<T> TriangleIntersection(
 template <typename G>
 class Intersectable { };
 
+template<>
+class Intersectable<Polygon> :
+  public IntersectableBase<Polygon> {
 
-template <typename T>
-class Intersectable<Polygon<3, T>> :
-  public IntersectableBase<Polygon<3, T>> {
-
-  using Polygon<3, T>::Polygon;
+  using Polygon::Polygon;
 
   public:
   
-  virtual Intersection<T> GetIntersection(const Ray<T>& ray) const {
-    Intersection<T> i1;
-    Intersection<T> i2;
+  virtual Intersection GetIntersection(const Ray& ray) const {
+    Intersection i1;
+    Intersection i2;
     for (unsigned int c = 0; c < this->points.size() - 2; ++c) {
       i2 = TriangleIntersection(
         ray, 
@@ -66,17 +59,17 @@ class Intersectable<Polygon<3, T>> :
   
 };
 
-template <unsigned int C, typename T>
-class Intersectable<FixedPolygon<C, 3, T>> :
-  public IntersectableBase<FixedPolygon<C, 3, T>> {
+template <unsigned int C>
+class Intersectable<FixedPolygon<C>> :
+  public IntersectableBase<FixedPolygon<C>> {
 
-  using FixedPolygon<C, 3, T>::FixedPolygon;
+  using FixedPolygon<C>::FixedPolygon;
 
   public:
   
-  virtual Intersection<T> GetIntersection(const Ray<T>& ray) const {
-    Intersection<T> i1;
-    Intersection<T> i2;
+  virtual Intersection GetIntersection(const Ray& ray) const {
+    Intersection i1;
+    Intersection i2;
     for (unsigned int c = 0; c < C - 2; ++c) {
       i2 = TriangleIntersection(
         ray, 
@@ -94,15 +87,15 @@ class Intersectable<FixedPolygon<C, 3, T>> :
   
 };
 
-template <typename T>
-class Intersectable<Triangle<3, T>> :
-  public IntersectableBase<Triangle<3, T>> {
+template<>
+class Intersectable<Triangle> :
+  public IntersectableBase<Triangle> {
 
-  using Triangle<3, T>::Triangle;
+  using Triangle::Triangle;
 
   public:
   
-  virtual Intersection<T> GetIntersection(const Ray<T>& ray) const {
+  virtual Intersection GetIntersection(const Ray& ray) const {
     return TriangleIntersection(ray, this->points[0], this->points[1], this->points[2]);
   }
   
