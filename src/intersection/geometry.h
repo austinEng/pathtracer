@@ -42,12 +42,12 @@ class Intersectable<Polygon> :
   virtual Intersection GetIntersection(const Ray& ray) const {
     Intersection i1;
     Intersection i2;
-    for (unsigned int c = 0; c < this->points.size() - 2; ++c) {
+    for (unsigned int c = 0; c < this->positions.size() - 2; ++c) {
       i2 = TriangleIntersection(
         ray, 
-        this->points[c],
-        this->points[c+1],
-        this->points[c+2]
+        this->positions[c],
+        this->positions[c+1],
+        this->positions[c+2]
       );
       if (i2.hit && i2.t > 0 && (i2.t < i1.t || !i1.hit)) {
         std::swap(i1, i2);
@@ -73,9 +73,9 @@ class Intersectable<FixedPolygon<C>> :
     for (unsigned int c = 0; c < C - 2; ++c) {
       i2 = TriangleIntersection(
         ray, 
-        this->points[c],
-        this->points[c+1],
-        this->points[c+2]
+        this->positions[c],
+        this->positions[c+1],
+        this->positions[c+2]
       );
       if (i2.hit && i2.t > 0 && (i2.t < i1.t || !i1.hit)) {
         std::swap(i1, i2);
@@ -96,7 +96,7 @@ class Intersectable<Triangle> :
   public:
   
   virtual Intersection GetIntersection(const Ray& ray) const {
-    return TriangleIntersection(ray, this->points[0], this->points[1], this->points[2]);
+    return TriangleIntersection(ray, this->positions[0], this->positions[1], this->positions[2]);
   }
   
 };

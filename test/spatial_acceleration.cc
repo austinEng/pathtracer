@@ -72,8 +72,9 @@ int main(int argc, char** argv) {
           ty = attrib.texcoords[2*idx.texcoord_index+1];
         }
 
-        p->points.emplace_back(vx, vy, vz);
+        p->positions.emplace_back(vx, vy, vz);
         p->normals.emplace_back(nx, ny, nz);
+        p->uvs.emplace_back(tx, ty);
       }
       index_offset += fv;
 

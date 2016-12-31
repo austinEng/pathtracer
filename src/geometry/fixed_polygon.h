@@ -11,8 +11,9 @@ class FixedPolygon : public Primitive {
 
   FixedPolygon() {}
 
-  glm::vec3 points[C];  // counter-clockwise winding order
+  glm::vec3 positions[C];  // counter-clockwise winding order
   glm::vec3 normals[C];
+  glm::vec2 uvs[C];
 };
 
 using Triangle = FixedPolygon<3>;

@@ -9,15 +9,18 @@ namespace rt {
 
 class Context {
   
-  BVHTree bvhTree;
+  BVHTree<4, 4> bvhTree;
 
   public:
   void initialize(std::vector<std::shared_ptr<BoundableInterface>> &polygons) {
     bvhTree.build(polygons);
   }
 
-  void trace(std::vector<Ray> &rays) {
-    
+  std::vector<Intersection> trace(std::vector<Ray> &rays) {
+    std::vector<Intersection> intersections;
+    intersections.reserve(rays.size());
+
+    return intersections;
   }
 
 };

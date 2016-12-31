@@ -3,12 +3,13 @@
 
 #include "spatial_tree.h"
 
-class BVHTree : public SpatialTree {
+template <unsigned int B, unsigned int L>
+class BVHTree : public SpatialTree<B, L> {
   public:
   
   typedef Bound bound_t;
   typedef BoundableInterface object_t;
-  typedef SpatialTree::Node node_t;
+  typedef typename SpatialTree<B, L>::Node node_t;
 
   enum Mode {
     SAH, // http://www.sci.utah.edu/~wald/Publications/2007/ParallelBVHBuild/fastbuild.pdf
@@ -42,6 +43,7 @@ class BVHTree : public SpatialTree {
   Config config;
   int nodeCount;
 
+  void parition(std::vector<Primitive> &prims, unsigned int begin, unsigned int end, unsigned int paritions[2*B]);
   node_t* recbuild(std::vector<Primitive> &prims, unsigned int begin, unsigned int end);
   void sortPrimitives(std::vector<Primitive> &prims);
   // void findSplit(std::vector<Primitive> &objects, unsigned int begin, unsigned int end, unsigned int &axis, T &split);

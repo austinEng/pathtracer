@@ -6,16 +6,16 @@
 
 class Bound {
 private:
-  float dims[6];
+  float dims[8];
 
 public:
 
   Bound() {
-    for (unsigned int d = 0; d < 3; ++d) {
-      min(d) = std::numeric_limits<float>::infinity();
+    for (unsigned int d = 0; d < 4; ++d) {
+      min(d) = std::numeric_limits<float>::max();
     }
-    for (unsigned int d = 0; d < 3; ++d) {
-      max(d) = -std::numeric_limits<float>::infinity();
+    for (unsigned int d = 0; d < 4; ++d) {
+      max(d) = std::numeric_limits<float>::lowest();
     }
   }
 
@@ -24,7 +24,7 @@ public:
   }
 
   float& max(unsigned int i) {
-    return dims[i + 3];
+    return dims[i + 4];
   }
 
   float min(unsigned int i) const {
@@ -32,13 +32,11 @@ public:
   }
 
   float max(unsigned int i) const {
-    return dims[i + 3];
+    return dims[i + 4];
   }
 
   float extent(unsigned int i) const {
-    float e = max(i) - min(i);
-    if (e < 0) return 0;
-    return e;
+    return max(i) - min(i);
   }
 
   unsigned int greatestExtent() const {
@@ -52,16 +50,41 @@ public:
   }
 
   void merge(const Bound& other) {
-    for (unsigned int d = 0; d < 3; ++d) {
-      if (other.min(d) < min(d)) min(d) = other.min(d);
-      if (other.max(d) > max(d)) max(d) = other.max(d);
+
+    // for (unsigned int d = 0; d < 3; ++d) {
+    //   if (other.min(d) < min(d)) min(d) = other.min(d);
+    //   if (other.max(d) > max(d)) max(d) = other.max(d);
+    // }
+
+    int islower[4];
+    int isgreater[4];
+    for (unsigned int d = 0; d < 4; ++d) {
+      islower[d] = other.min(d) < min(d);
+      isgreater[d] = other.max(d) > max(d);
+    }
+    for (unsigned int d = 0; d < 4; ++d) {
+      min(d) = other.min(d) * islower[d] + min(d) * !islower[d];
+      max(d) = other.min(d) * isgreater[d] + max(d) * !isgreater[d];
     }
   }
 
   void merge(const glm::vec3& point) {
-    for (unsigned int d = 0; d < 3; ++d) {
-      if (point[d] < min(d)) min(d) = point[d];
-      if (point[d] > max(d)) max(d) = point[d];
+
+    // for (unsigned int d = 0; d < 3; ++d) {
+    //   if (point[d] < min(d)) min(d) = point[d];
+    //   if (point[d] > max(d)) max(d) = point[d];
+    // }
+
+    glm::vec4 p(point, 1);
+    int islower[4];
+    int isgreater[4];
+    for (unsigned int d = 0; d < 4; ++d) {
+      islower[d] = p[d] < min(d);
+      isgreater[d] = p[d] > max(d);
+    }
+    for (unsigned int d = 0; d < 4; ++d) {
+      min(d) = p[d] * islower[d] + min(d) * !islower[d];
+      max(d) = p[d] * isgreater[d] + max(d) * !isgreater[d];
     }
   }
 

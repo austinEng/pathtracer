@@ -18,18 +18,18 @@ class Boundable<Polygon> : public BoundableBase<Polygon> {
     Bound bound;
 
     for (unsigned int d = 0; d < 3; ++d) {
-      bound.min(d) = this->points[0][d];
+      bound.min(d) = this->positions[0][d];
     }
     for (unsigned int d = 0; d < 3; ++d) {
-      bound.max(d) = this->points[0][d];
+      bound.max(d) = this->positions[0][d];
     }
 
-    for (unsigned int c = 1; c < this->points.size(); ++c) {
+    for (unsigned int c = 1; c < this->positions.size(); ++c) {
       for (unsigned int d = 0; d < 3; ++d) {
-        if (this->points[c][d] < bound.min(d)) bound.min(d) = this->points[c][d];
+        if (this->positions[c][d] < bound.min(d)) bound.min(d) = this->positions[c][d];
       }
       for (unsigned int d = 0; d < 3; ++d) {
-        if (this->points[c][d] > bound.max(d)) bound.max(d) = this->points[c][d];
+        if (this->positions[c][d] > bound.max(d)) bound.max(d) = this->positions[c][d];
       }
     }
 
@@ -39,9 +39,9 @@ class Boundable<Polygon> : public BoundableBase<Polygon> {
   virtual glm::vec3 GetCentroid() const {
     glm::vec3 centroid;
 
-    for (unsigned int c = 0; c < this->points.size(); ++c) {
+    for (unsigned int c = 0; c < this->positions.size(); ++c) {
       for (unsigned int d = 0; d < 3; ++d) {
-        centroid[d] += this->points[c][d] / this->points.size();
+        centroid[d] += this->positions[c][d] / this->positions.size();
       }
     }
 
@@ -62,18 +62,18 @@ class Boundable<FixedPolygon<C>> :
     Bound bound;
 
     for (unsigned int d = 0; d < 3; ++d) {
-      bound.min(d) = this->points[0][d];
+      bound.min(d) = this->positions[0][d];
     }
     for (unsigned int d = 0; d < 3; ++d) {
-      bound.max(d) = this->points[0][d];
+      bound.max(d) = this->positions[0][d];
     }
 
     for (unsigned int c = 1; c < C; ++c) {
       for (unsigned int d = 0; d < 3; ++d) {
-        if (this->points[c][d] < bound.min(d)) bound.min(d) = this->points[c][d];
+        if (this->positions[c][d] < bound.min(d)) bound.min(d) = this->positions[c][d];
       }
       for (unsigned int d = 0; d < 3; ++d) {
-        if (this->points[c][d] > bound.max(d)) bound.max(d) = this->points[c][d];
+        if (this->positions[c][d] > bound.max(d)) bound.max(d) = this->positions[c][d];
       }
     }
 
@@ -85,7 +85,7 @@ class Boundable<FixedPolygon<C>> :
 
     for (unsigned int c = 0; c < C; ++c) {
       for (unsigned int d = 0; d < 3; ++d) {
-        centroid[d] += this->points[c][d] / C;
+        centroid[d] += this->positions[c][d] / C;
       }
     }
 

@@ -1,12 +1,14 @@
 
 file(GLOB ae_graphics_headers
   core/*.h
+  geometry/*.h
   spatial_acceleration/*.h  
   intersection/*.h
 )
 
 file(GLOB ae_graphics_source
   core/*.cc
+  geometry/*.cc
   spatial_acceleration/*.cc  
   intersection/*.cc
 )
