@@ -102,3 +102,28 @@ std::ostream& operator<<(std::ostream& os, const Bound& b) {
   }
   return os;  
 }  
+
+template <unsigned int N>
+class BoundSOA {
+  static const int _N = N % 4 == 0 ? N : N + 4 - (N % 4);
+  float dims[2*3*_N];
+  // x,x,x,_,y,y,y_,z,z,z_,X,X,X,_,Y,Y,Y,_,Z,Z,Z,_
+
+  public:
+
+  float& min(unsigned int n, unsigned int i) {
+    return dims[i*_N + n];
+  }
+
+  float& max(unsigned int n, unsigned int i) {
+    return dims[i*_N + n + 3*_N];
+  }
+
+  float min(unsigned int n, unsigned int i) const {
+    return dims[i*_N + n];
+  }
+
+  float max(unsigned int n, unsigned int i) const {
+    return dims[i*_N + n + 3*_N];
+  }
+};

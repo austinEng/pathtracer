@@ -37,14 +37,13 @@ class BVHTree : public SpatialTree<B, L> {
 
   BVHTree(Config &config);
 
-  virtual node_t* internalBuild(std::vector<std::shared_ptr<object_t>> &objects);
+  virtual node_t* internalBuild(std::vector<std::shared_ptr<object_t>> &objects, node_t* arena);
 
   private:
   Config config;
-  int nodeCount;
 
   void parition(std::vector<Primitive> &prims, unsigned int begin, unsigned int end, unsigned int paritions[2*B]);
-  node_t* recbuild(std::vector<Primitive> &prims, unsigned int begin, unsigned int end);
+  node_t* recbuild(std::vector<Primitive> &prims, unsigned int begin, unsigned int end, node_t** arena);
   void sortPrimitives(std::vector<Primitive> &prims);
   // void findSplit(std::vector<Primitive> &objects, unsigned int begin, unsigned int end, unsigned int &axis, T &split);
 };

@@ -4,6 +4,7 @@
 #include "bound.h"
 #include "boundable.h"
 #include <vector>
+#include <deque>
 #include <memory>
 
 template <unsigned int B, unsigned int L>
@@ -16,7 +17,11 @@ public:
   class alignas(64) Node {
     public:
     std::shared_ptr<object_t> objects[L];
-    Node* children[B];
+    union {
+      Node* children[B];
+      unsigned int childIndices[B];
+    };
+    bool leaf;
     bound_t bound;
 
     Node() {
@@ -48,20 +53,57 @@ public:
       }
     }
 
-    // Node(std::shared_ptr<object_t> &obj) : object(obj) {
-    //   std::memset(this->children, 0, sizeof(this->children));
-    //   if (obj != nullptr) {
-    //     bound = obj->GetBound();
-    //   }
-    // }
   };
 
-  virtual Node* internalBuild(std::vector<std::shared_ptr<object_t>> &objects) = 0;
+  class alignas(64) NodeGroup {
+    public:
+    BoundSOA<B> bounds;
+  };
+
+  virtual Node* internalBuild(std::vector<std::shared_ptr<object_t>> &objects, Node* arena) = 0;
+
   void build(std::vector<std::shared_ptr<object_t>> &objects) {
-    internalBuild(objects);
+    Node* arena = (Node*) malloc(sizeof(Node) * objects.size() * 2);
+    Node* root = internalBuild(objects, arena);
+    memcpy(&this->root, root, sizeof(Node));
+
+    this->nodes.clear();
+    this->nodes.reserve(this->nodeCount - 1);
+    std::deque<Node*> queue;
+    queue.push_back(&this->root);
+    unsigned int idx = 0;
+    while(queue.size() > 0) {
+      Node* node = queue.front();
+      queue.pop_front();
+
+      unsigned int indices[B];
+      if (!node->leaf) {
+        for (unsigned int i = 0; i < B; ++i) {
+          if (node->children[i] != nullptr) {
+            indices[i] = idx++;
+            this->nodes.emplace_back();
+            Node* newNode = &this->nodes.back();
+            memcpy(newNode, node->children[i], sizeof(Node));
+            queue.push_back(newNode);
+            
+          } else {
+            idx++;
+            indices[i] = -1;
+            this->nodes.emplace_back();
+          }
+        }
+      }
+      for (unsigned int i = 0; i < B; ++i) {
+        node->childIndices[i] = indices[i];
+      }
+    }
+    std::cout << this->nodes.size() << " nodes" << std::endl;
+    free(arena);
   }
 
 protected:
+  int nodeCount;
+  Node root;
   std::vector<Node> nodes; // this should probably be cache-aligned. probably use a memory arena too
 
 };
