@@ -14,6 +14,6 @@ public:
 template <typename G>
 class BoundableBase : 
   public G,
-  public BoundableInterface {
+  public virtual BoundableInterface {
   
 };

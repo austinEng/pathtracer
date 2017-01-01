@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <limits>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 class Bound {
 private:
@@ -69,11 +71,6 @@ public:
   }
 
   void merge(const glm::vec3& point) {
-
-    // for (unsigned int d = 0; d < 3; ++d) {
-    //   if (point[d] < min(d)) min(d) = point[d];
-    //   if (point[d] > max(d)) max(d) = point[d];
-    // }
 
     glm::vec4 p(point, 1);
     int islower[4];

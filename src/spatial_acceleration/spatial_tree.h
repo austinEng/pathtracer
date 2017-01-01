@@ -13,21 +13,19 @@ public:
 
   typedef Bound bound_t;
   typedef BoundableInterface object_t;
+  // typedef BoundableBase<Primitive> object_t;
 
   class alignas(64) Node {
     public:
-    std::shared_ptr<object_t> objects[L];
+    std::shared_ptr<object_t> objects[L] = { nullptr };
     union {
-      Node* children[B];
+      Node* children[B] = { nullptr };
       unsigned int childIndices[B];
     };
     bool leaf;
     bound_t bound;
 
-    Node() {
-      std::memset(this->children, 0, sizeof(this->children));
-      std::memset(this->objects, 0, sizeof(this->objects));
-    }
+    Node() { }
 
     void setChildren(Node* children[B]) {
       for (unsigned int i = 0; i < B; ++i) {
@@ -99,11 +97,13 @@ public:
     }
     std::cout << this->nodes.size() << " nodes" << std::endl;
     free(arena);
+    std::cout << this->root.bound << std::endl;
   }
+
+  Node root;
 
 protected:
   int nodeCount;
-  Node root;
   std::vector<Node> nodes; // this should probably be cache-aligned. probably use a memory arena too
 
 };

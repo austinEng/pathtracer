@@ -31,14 +31,4 @@ set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_T
 add_subdirectory(src)
 
 enable_testing()
-
-add_executable(spatial_acceleration_test test/spatial_acceleration.cc)
-target_link_libraries(spatial_acceleration_test ae_graphics tinyobjloader)
-add_test(
-  NAME bvh_sah_build_bunny 
-  COMMAND build/spatial_acceleration_test objs/bunny.obj 
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-add_test(
-  NAME bvh_sah_build_dragon 
-  COMMAND build/spatial_acceleration_test objs/dragon.obj 
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(test)

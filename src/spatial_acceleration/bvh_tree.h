@@ -7,9 +7,10 @@ template <unsigned int B, unsigned int L>
 class BVHTree : public SpatialTree<B, L> {
   public:
   
-  typedef Bound bound_t;
-  typedef BoundableInterface object_t;
   typedef typename SpatialTree<B, L>::Node node_t;
+  typedef typename SpatialTree<B, L>::bound_t bound_t;
+  typedef typename  SpatialTree<B, L>::object_t object_t;
+
 
   enum Mode {
     SAH, // http://www.sci.utah.edu/~wald/Publications/2007/ParallelBVHBuild/fastbuild.pdf

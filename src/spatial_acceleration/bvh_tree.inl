@@ -125,9 +125,9 @@ typename BVHTree<B, L>::node_t* BVHTree<B, L>::recbuild(std::vector<Primitive> &
   if (end - begin == 0) return nullptr;
   if (end - begin <= L) {
 
-    node_t* node = (*arena)++;
-    *node = node_t();
+    node_t* node = new((*arena)++) node_t();
     node->leaf = true;
+    
     std::shared_ptr<object_t> objects[L];
     for (unsigned int i = 0; i < L; ++i) {
       if (begin + i < end) {
@@ -143,8 +143,7 @@ typename BVHTree<B, L>::node_t* BVHTree<B, L>::recbuild(std::vector<Primitive> &
   unsigned int partitions[2*B];
   parition(prims, begin, end, partitions);
 
-  node_t* node = (*arena)++;
-  *node = node_t();
+  node_t* node = new((*arena)++) node_t();
   node->leaf = false;
 
   node_t* children[B];

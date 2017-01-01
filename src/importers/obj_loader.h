@@ -1,26 +1,13 @@
-#include <iostream>
 
-#define TINYOBJLOADER_IMPLEMENTATION
+#pragma once
+
 #include <tiny_obj_loader.h>
-
 #include <geometry/polygon.h>
-#include <intersection/geometry.h>
-#include <spatial_acceleration/geometry.h>
-#include <spatial_acceleration/bound.h>
-#include <spatial_acceleration/bvh_tree.h>
-#include <raytrace/context.h>
+#include <memory>
 
-int main(int argc, char** argv) {
-  if (argc < 2) {
-    std::cout << "Usage: obj_file" << std::endl;
-    return 1;
-  }
-  
-  typedef Polygon polygon_t;
-
-  std::vector<std::shared_ptr<BoundableInterface>> polygons;
-
-  std::cout << "Loading obj file " << argv[1] << std::endl;
+template <typename T, typename P>
+std::vector<std::shared_ptr<T>> LoadObj(const char* filepath) {
+  std::vector<std::shared_ptr<T>> primitives;
 
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
@@ -28,7 +15,7 @@ int main(int argc, char** argv) {
 
   std::string err;
   int flags = 2;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, argv[1], NULL, flags);
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filepath, NULL, flags);
 
   if (!err.empty()) { // `err` may contain warning message.
     std::cerr << err << std::endl;
@@ -45,8 +32,8 @@ int main(int argc, char** argv) {
     for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
       unsigned int fv = shapes[s].mesh.num_face_vertices[f];
 
-      std::shared_ptr<Intersectable<polygon_t>> p = std::make_shared<Intersectable<polygon_t>>(fv);
-      polygons.push_back(p);
+      std::shared_ptr<P> p = std::make_shared<P>(fv);
+      primitives.push_back(p);
 
       // Loop over vertices in the face.
       for (size_t v = 0; v < fv; v++) {
@@ -82,9 +69,5 @@ int main(int argc, char** argv) {
       shapes[s].mesh.material_ids[f];
     }
   }
-
-  rt::Context rtContext;
-  rtContext.initialize(polygons);
-
-  return 0;
+  return primitives;
 }
