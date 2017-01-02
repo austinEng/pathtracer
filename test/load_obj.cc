@@ -10,8 +10,6 @@ int main(int argc, char** argv) {
     std::cout << "Usage: obj_file" << std::endl;
     return 1;
   }
-  
-  typedef Polygon polygon_t;
 
   std::vector<std::shared_ptr<Polygon>> polygons;
 

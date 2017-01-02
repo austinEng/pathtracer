@@ -20,7 +20,7 @@ public:
     std::shared_ptr<object_t> objects[L] = { nullptr };
     union {
       Node* children[B] = { nullptr };
-      unsigned int childIndices[B];
+      int childIndices[B];
     };
     bool leaf;
     bound_t bound;
@@ -74,7 +74,7 @@ public:
       Node* node = queue.front();
       queue.pop_front();
 
-      unsigned int indices[B];
+      int indices[B];
       if (!node->leaf) {
         for (unsigned int i = 0; i < B; ++i) {
           if (node->children[i] != nullptr) {
@@ -101,9 +101,7 @@ public:
   }
 
   Node root;
-
-protected:
   int nodeCount;
-  std::vector<Node> nodes; // this should probably be cache-aligned. probably use a memory arena too
+  std::vector<Node> nodes;
 
 };

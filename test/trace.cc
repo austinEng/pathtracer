@@ -33,17 +33,31 @@ int main(int argc, char** argv) {
   Bound& bound = rtContext.bvhTree.root.bound;
 
   camera.tgt = glm::vec3(
-    bound.max(0) - bound.min(0),
-    bound.max(1) - bound.min(1),
-    bound.max(2) - bound.min(2)
+    bound.max(0) + bound.min(0),
+    bound.max(1) + bound.min(1),
+    bound.max(2) + bound.min(2)
   ) / 2.f;
   camera.eye = camera.tgt + glm::vec3(0,0,1) * bound.extent(1) / 2.f / std::atan(camera.fovy / 2.f);
 
-  std::vector<Ray> rays = std::move(camera.GenerateRays(16));
+  std::cout << camera.eye.z - camera.tgt.z << std::endl;
+
+  std::vector<Ray> rays = std::move(camera.GenerateRays(1));
 
   std::cout << "Tracing " << rays.size() << " rays" << std::endl;
 
   std::vector<Intersection> intersections = std::move(rtContext.trace(rays));
   
+  float min = std::numeric_limits<float>::max();
+  float max = std::numeric_limits<float>::lowest();
+
+  for (unsigned int i = 0; i < intersections.size(); ++i) {
+    if (intersections[i].hit) {
+      min = std::min(min, intersections[i].t);
+      max = std::max(max, intersections[i].t);
+    }
+  }
+
+  std::cout << min << " --> " << max << std::endl;
+
   return 0;
 }

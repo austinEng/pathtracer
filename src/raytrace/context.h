@@ -4,8 +4,9 @@
 #include <spatial_acceleration/boundable.h>
 #include <intersection/ray.h>
 #include <intersection/intersection.h>
-#include "camera.h"
 #include <camera/camera.h>
+#include "camera.h"
+#include "traversal.h"
 
 namespace rt {
 
@@ -21,11 +22,10 @@ class Context {
   }
 
   std::vector<Intersection> trace(std::vector<Ray> &rays) {
-    std::vector<Intersection> intersections;
-    intersections.reserve(rays.size());
+    std::vector<Intersection> intersections(rays.size());
 
     for (unsigned int i = 0; i < rays.size(); ++i) {
-      
+      intersections[i] = Traverse(bvhTree, -1, rays[i]);
     }
 
     return intersections;

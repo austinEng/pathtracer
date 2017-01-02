@@ -8,7 +8,7 @@ struct Intersection {
   glm::vec3 normal;
   // Vector3<T> tangent;
   // Vector3<T> binormal;
-  float t;
+  float t = std::numeric_limits<float>::max();
   // bool backface;
   bool hit = false;
 };

@@ -17,20 +17,8 @@ class Boundable<Polygon> : public BoundableBase<Polygon> {
   virtual Bound GetBound() const {
     Bound bound;
 
-    for (unsigned int d = 0; d < 3; ++d) {
-      bound.min(d) = this->positions[0][d];
-    }
-    for (unsigned int d = 0; d < 3; ++d) {
-      bound.max(d) = this->positions[0][d];
-    }
-
-    for (unsigned int c = 1; c < this->positions.size(); ++c) {
-      for (unsigned int d = 0; d < 3; ++d) {
-        if (this->positions[c][d] < bound.min(d)) bound.min(d) = this->positions[c][d];
-      }
-      for (unsigned int d = 0; d < 3; ++d) {
-        if (this->positions[c][d] > bound.max(d)) bound.max(d) = this->positions[c][d];
-      }
+    for (unsigned int c = 0; c < this->positions.size(); ++c) {
+      bound.merge(this->positions[c]);
     }
 
     return bound;
@@ -60,21 +48,9 @@ class Boundable<FixedPolygon<C>> :
   
   virtual Bound GetBound() const {
     Bound bound;
-
-    for (unsigned int d = 0; d < 3; ++d) {
-      bound.min(d) = this->positions[0][d];
-    }
-    for (unsigned int d = 0; d < 3; ++d) {
-      bound.max(d) = this->positions[0][d];
-    }
-
-    for (unsigned int c = 1; c < C; ++c) {
-      for (unsigned int d = 0; d < 3; ++d) {
-        if (this->positions[c][d] < bound.min(d)) bound.min(d) = this->positions[c][d];
-      }
-      for (unsigned int d = 0; d < 3; ++d) {
-        if (this->positions[c][d] > bound.max(d)) bound.max(d) = this->positions[c][d];
-      }
+    
+    for (unsigned int c = 0; c < C; ++c) { 
+      bound.merge(this->positions[c]);
     }
 
     return bound;

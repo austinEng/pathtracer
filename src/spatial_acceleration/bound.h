@@ -53,11 +53,6 @@ public:
 
   void merge(const Bound& other) {
 
-    // for (unsigned int d = 0; d < 3; ++d) {
-    //   if (other.min(d) < min(d)) min(d) = other.min(d);
-    //   if (other.max(d) > max(d)) max(d) = other.max(d);
-    // }
-
     int islower[4];
     int isgreater[4];
     for (unsigned int d = 0; d < 4; ++d) {
@@ -66,7 +61,7 @@ public:
     }
     for (unsigned int d = 0; d < 4; ++d) {
       min(d) = other.min(d) * islower[d] + min(d) * !islower[d];
-      max(d) = other.min(d) * isgreater[d] + max(d) * !isgreater[d];
+      max(d) = other.max(d) * isgreater[d] + max(d) * !isgreater[d];
     }
   }
 

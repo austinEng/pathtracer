@@ -6,6 +6,7 @@
 #include "intersection.h"
 
 class IntersectableInterface : public virtual BoundableInterface {
+  public:
   
   virtual Intersection GetIntersection(const Ray& ray) const = 0;
 
