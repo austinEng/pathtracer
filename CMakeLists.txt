@@ -19,8 +19,8 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -funroll-loops -ftree-vectorize")
 
-add_subdirectory(ext/glm)
-add_subdirectory(ext/tinyobjloader)
+include_directories(${GRAPHICS_LIBS_DIR}/include)
+link_directories(${GRAPHICS_LIBS_DIR}/lib)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -fopt-info-vec-optimized -ftree-vectorizer-verbose=3")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
