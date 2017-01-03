@@ -11,10 +11,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::vector<std::shared_ptr<Polygon>> polygons;
-
   std::cout << "Loading obj file " << argv[1] << std::endl;
-  polygons = LoadObj<Polygon, Polygon>(argv[1]);
+  std::vector<Polygon> polys = LoadObj<Polygon>(argv[1]);
 
   return 0;
 }

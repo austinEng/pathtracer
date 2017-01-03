@@ -5,17 +5,16 @@
 #include <geometry/polygon.h>
 #include <memory>
 
-template <typename T, typename P>
-std::vector<std::shared_ptr<T>> LoadObj(const char* filepath) {
-  std::vector<std::shared_ptr<T>> primitives;
+template <typename T>
+std::vector<T> LoadObj(const char* filepath) {
+  std::vector<T> primitives;
 
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
 
   std::string err;
-  int flags = 2;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filepath, NULL, flags);
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filepath, NULL, true);
 
   if (!err.empty()) { // `err` may contain warning message.
     std::cerr << err << std::endl;
@@ -32,8 +31,11 @@ std::vector<std::shared_ptr<T>> LoadObj(const char* filepath) {
     for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
       unsigned int fv = shapes[s].mesh.num_face_vertices[f];
 
-      std::shared_ptr<P> p = std::make_shared<P>(fv);
-      primitives.push_back(p);
+      // std::shared_ptr<P> p = std::make_shared<P>(fv);
+      // T p = T(fv)
+      // primitives.push_back(p);
+      primitives.emplace_back(fv);
+      T* p = &primitives.back();
 
       // Loop over vertices in the face.
       for (size_t v = 0; v < fv; v++) {

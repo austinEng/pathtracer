@@ -7,6 +7,7 @@
 #include <importers/obj_loader.h>
 #include <spatial_acceleration/bound.h>
 #include <spatial_acceleration/bvh_tree.h>
+#include <spatial_acceleration/primitive.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -14,13 +15,12 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::vector<std::shared_ptr<BoundableInterface>> polygons;
-
   std::cout << "Loading obj file " << argv[1] << std::endl;
-  polygons = LoadObj<BoundableInterface, Boundable<Polygon>>(argv[1]);
 
-  BVHTree<4, 4> tree;
-  tree.build(polygons);
+  std::vector<Polygon> polys = LoadObj<Polygon>(argv[1]);
+
+  accel::BVH<accel::Triangle, 4, 4> test;
+  test.build(polys);
 
   return 0;
 }

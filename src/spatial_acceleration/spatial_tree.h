@@ -1,114 +1,73 @@
 
 #pragma once
 
-#include "bound.h"
-#include "boundable.h"
-#include <vector>
 #include <deque>
-#include <memory>
-#include <ae_core/simd/types.h>
+#include "primitive.h"
+#include "bound.h"
 
-template <unsigned int B, unsigned int L>
-class SpatialTree {
+namespace accel {
+
+template <typename P, unsigned int B, unsigned int L, typename T>
+class TreeBase {
+
 public:
 
-  typedef Bound bound_t;
-  typedef BoundableInterface object_t;
-  // typedef BoundableBase<Primitive> object_t;
+  class alignas(64) BuildNode {
+    public:
+    Bound bound;
+    union {
+      BuildNode* children[B];
+      int primitives[L];
+    };
+    bool isLeaf;
+  };
 
   class alignas(64) Node {
     public:
-    std::shared_ptr<object_t> objects[L] = { nullptr };
+    Bound bound;
     union {
-      Node* children[B] = { nullptr };
-      int childIndices[B];
+      int children[B];
+      int primitives[L];
     };
-    bool leaf;
-    bound_t bound;
+    bool isLeaf;
 
-    Node() { }
-
-    void setChildren(Node* children[B]) {
-      for (unsigned int i = 0; i < B; ++i) {
-        this->children[i] = children[i];
-      }
-      bound = bound_t();
-      for (unsigned int i = 0; i < B; ++i) {
-        if (this->children[i] != nullptr) {
-          bound.merge(this->children[i]->bound);
-        }
+    Node() {}
+    Node(const BuildNode &node) : 
+        bound(node.bound), 
+        isLeaf(node.isLeaf) {
+      for (unsigned int i = 0; i < L; ++i) {
+        primitives[i] = node.primitives[i];
       }
     }
-
-    void setObjects(std::shared_ptr<object_t> objects[L]) {
-      for (unsigned int i = 0; i < L; ++i) {
-        this->objects[i] = objects[i];
-      }
-      bound = bound_t();
-      for (unsigned int i = 0; i < L; ++i) {
-        if (this->objects[i] != nullptr) {
-          bound.merge(this->objects[i]->GetBound());
-        }
-      }
-    }
-
   };
 
   class alignas(64) NodeGroup {
-    public:
-    std::shared_ptr<object_t> objects[B*L] = { nullptr };
-    union {
-      NodeGroup* children[B] = { nullptr };
-      int childIndices[B];
-    };
-    BoundSoA<B> bound;
-    SIMD::Float<B> leaf;
+    BoundSoA<B> bounds;
   };
 
-  virtual Node* internalBuild(std::vector<std::shared_ptr<object_t>> &objects, Node* arena) = 0;
+  typedef BuildNode build_t;
+  typedef Node node_t;
+  typedef P prim_t;
 
-  void build(std::vector<std::shared_ptr<object_t>> &objects) {
-    Node* arena = (Node*) malloc(sizeof(Node) * objects.size() * 2);
-    Node* root = internalBuild(objects, arena);
-    memcpy(&this->root, root, sizeof(Node));
+  node_t root;
+  std::vector<node_t> nodes;
+  std::vector<P> prims;
 
-    this->nodes.clear();
-    this->nodes.reserve(this->nodeCount - 1);
-    std::deque<Node*> queue;
-    queue.push_back(&this->root);
-    unsigned int idx = 0;
-    while(queue.size() > 0) {
-      Node* node = queue.front();
-      queue.pop_front();
+  template <typename O>
+  void build(const std::vector<O> &objects);
 
-      int indices[B];
-      if (!node->leaf) {
-        for (unsigned int i = 0; i < B; ++i) {
-          if (node->children[i] != nullptr) {
-            indices[i] = idx++;
-            this->nodes.emplace_back();
-            Node* newNode = &this->nodes.back();
-            memcpy(newNode, node->children[i], sizeof(Node));
-            queue.push_back(newNode);
-            
-          } else {
-            idx++;
-            indices[i] = -1;
-            this->nodes.emplace_back();
-          }
-        }
-      }
-      for (unsigned int i = 0; i < B; ++i) {
-        node->childIndices[i] = indices[i];
-      }
-    }
-    std::cout << this->nodes.size() << " nodes" << std::endl;
-    free(arena);
-    std::cout << this->root.bound << std::endl;
+private:
+
+  build_t* InternalBuild(std::vector<prim_t> &prims, build_t* arena, int &nodeCount) {
+    return static_cast<T*>(this)->InternalBuild(prims, arena, nodeCount);
   }
 
-  Node root;
-  int nodeCount;
-  std::vector<Node> nodes;
+  void flatten(build_t* root, unsigned int nodeCount);
 
 };
+
+#include "spatial_tree.inl"
+
+}
+  
+

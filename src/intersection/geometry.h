@@ -7,6 +7,7 @@
 #include "intersectable.h"
 #include "intersection.h"
 #include <core/util.h>
+#include <spatial_acceleration/primitive.h>
 
 Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
   glm::vec3 cross = glm::cross(p2 - p1, p3 - p2);
@@ -26,6 +27,10 @@ Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p1, const glm
   inter.hit = fequal(a1 + a2 + a3, area);
 
   return inter;
+}
+
+Intersection Intersect(const accel::Triangle prim, const Ray &ray) {
+  return TriangleIntersection(ray, prim.positions[0], prim.positions[1], prim.positions[2]); 
 }
 
 template <typename G>

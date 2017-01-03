@@ -41,19 +41,19 @@ float IntersectBound(const Bound &bound, const Ray &ray) {
 }
 
 template <unsigned int B, unsigned int L>
-Intersection Traverse(const BVHTree<B, L> &tree, int i, const Ray& ray) {
+Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray) {
   // TODO: vectorize this
   // std::cout << i << std::endl;
-  typedef typename BVHTree<B, L>::node_t node_t;
+  typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = i < 0 ? tree.root : tree.nodes[i];
 
   Intersection i1;
   Intersection i2;
-  if (!n.leaf) {
+  if (!n.isLeaf) {
 
     std::pair<float, int> ts[B];
     for (unsigned int i = 0; i < B; ++i) {
-      int idx = n.childIndices[i];
+      int idx = n.children[i];
       if (idx >= 0) {
         float t = IntersectBound(tree.nodes[idx].bound, ray);
         ts[i] = std::make_pair(t, idx);
@@ -73,17 +73,16 @@ Intersection Traverse(const BVHTree<B, L> &tree, int i, const Ray& ray) {
     }   
   } else {
     for (unsigned int i = 0; i < L; ++i) {
-      if (n.objects[i] != nullptr) {
-        i2 = std::dynamic_pointer_cast<IntersectableInterface>(n.objects[i])->GetIntersection(ray);
-      }
-      if (i2.hit && (i2.t < i1.t || !i1.hit)) {
-        std::swap(i1, i2);
+      if (n.primitives[i] != -1) {
+        i2 = Intersect(tree.prims[n.primitives[i]], ray);
+        if (i2.hit && (i2.t < i1.t || !i1.hit)) {
+          std::swap(i1, i2);
+        }
       }
     }
   }
   
   return i1;
-
 }
 
 }

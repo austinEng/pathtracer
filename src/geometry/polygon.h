@@ -12,9 +12,9 @@ class Polygon : public Primitive {
 
   Polygon() {}
   Polygon(unsigned int count) {
-    positions.resize(count);
-    normals.resize(count);
-    uvs.resize(count);
+    positions.reserve(count);
+    normals.reserve(count);
+    uvs.reserve(count);
   }
 
   std::vector<glm::vec3> positions; // counter-clockwise winding order

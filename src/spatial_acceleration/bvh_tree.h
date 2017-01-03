@@ -3,14 +3,12 @@
 
 #include "spatial_tree.h"
 
-template <unsigned int B, unsigned int L>
-class BVHTree : public SpatialTree<B, L> {
-  public:
-  
-  typedef typename SpatialTree<B, L>::Node node_t;
-  typedef typename SpatialTree<B, L>::bound_t bound_t;
-  typedef typename  SpatialTree<B, L>::object_t object_t;
+namespace accel {
 
+template <typename P, unsigned int B, unsigned int L>
+class BVH : public TreeBase<P, B, L, BVH<P, B, L>> {
+
+  public:
 
   enum Mode {
     SAH, // http://www.sci.utah.edu/~wald/Publications/2007/ParallelBVHBuild/fastbuild.pdf
@@ -22,31 +20,20 @@ class BVHTree : public SpatialTree<B, L> {
     unsigned int binCount = 12;
   };
 
-  struct Primitive {
-    bound_t bound;
-    glm::vec3 centroid;
-    std::shared_ptr<object_t> object;
+  typedef typename TreeBase<P, B, L, BVH<P, B, L>>::build_t node_t;
+  typedef P prim_t;
 
-    Primitive(std::shared_ptr<object_t> &obj) {
-      object = obj;
-      bound = obj->GetBound();
-      centroid = obj->GetCentroid();
-    }
-  };
-
-  BVHTree();
-
-  BVHTree(Config &config);
-
-  virtual node_t* internalBuild(std::vector<std::shared_ptr<object_t>> &objects, node_t* arena);
+  node_t* InternalBuild(std::vector<P> &prims, node_t* arena, int &nodeCount);
 
   private:
+  int nodeCount;
   Config config;
 
-  void parition(std::vector<Primitive> &prims, unsigned int begin, unsigned int end, unsigned int paritions[2*B]);
-  node_t* recbuild(std::vector<Primitive> &prims, unsigned int begin, unsigned int end, node_t** arena);
-  void sortPrimitives(std::vector<Primitive> &prims);
-  // void findSplit(std::vector<Primitive> &objects, unsigned int begin, unsigned int end, unsigned int &axis, T &split);
+  void partition(std::vector<P> &prims, unsigned int begin, unsigned int end, unsigned int partitions[2*B]);
+  node_t* recbuild(std::vector<P> &prims, unsigned int begin, unsigned int end, node_t** arena);
+
 };
 
 #include "bvh_tree.inl"
+
+}

@@ -9,6 +9,7 @@
 #include <spatial_acceleration/bound.h>
 #include <spatial_acceleration/bvh_tree.h>
 #include <raytrace/context.h>
+#include <raytrace/camera.h>
 
 #include <OpenEXR/ImfHeader.h>
 #include <OpenEXR/ImfChannelList.h>
@@ -21,10 +22,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  std::vector<std::shared_ptr<IntersectableInterface>> polygons;
-
   std::cout << "Loading obj file " << argv[1] << std::endl;
-  polygons = LoadObj<IntersectableInterface, Intersectable<Polygon>>(argv[1]);
+  std::vector<Polygon> polygons = LoadObj<Polygon>(argv[1]);
 
   rt::Context rtContext;
   rtContext.initialize(polygons);
