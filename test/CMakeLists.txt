@@ -1,12 +1,19 @@
 
 add_executable(load_obj load_obj.cc)
-target_link_libraries(load_obj ae_graphics tinyobjloader)
+target_link_libraries(load_obj 
+  ae_graphics 
+  tinyobjloader)
 
 add_executable(tree_build tree_build.cc)
-target_link_libraries(tree_build ae_graphics tinyobjloader)
+target_link_libraries(tree_build 
+  ae_graphics 
+  tinyobjloader)
 
-add_executable(trace trace.cc)
-target_link_libraries(trace ae_graphics tinyobjloader)
+add_executable(depth_trace depth_trace.cc)
+target_link_libraries(depth_trace 
+  ae_graphics 
+  tinyobjloader 
+  IlmImf-2_2)
 
 add_test(
   NAME load_bunny_obj
@@ -29,11 +36,11 @@ add_test(
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 add_test(
-  NAME trace_bunny 
-  COMMAND build/test/trace objs/bunny.obj 
+  NAME depth_trace_bunny 
+  COMMAND build/test/depth_trace objs/bunny.obj 
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 add_test(
-  NAME trace_dragon 
-  COMMAND build/test/trace objs/dragon.obj 
+  NAME depth_trace_dragon 
+  COMMAND build/test/depth_trace objs/dragon.obj 
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

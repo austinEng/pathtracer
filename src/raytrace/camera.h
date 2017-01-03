@@ -9,7 +9,9 @@ namespace rt {
   template <typename C>
   class CameraBase : public C {
     public:
-    virtual std::vector<Ray> GenerateRays(unsigned int spp) const = 0; 
+    std::vector<Ray> GenerateRays(unsigned int spp) const {
+      return static_cast<C*>(this)->GenerateRays(spp);
+    }
   };
   
   template <typename C>
@@ -18,7 +20,7 @@ namespace rt {
   template <>
   class Camera<::Camera> : public CameraBase<::Camera> {
     public:
-    virtual std::vector<Ray> GenerateRays(unsigned int spp) const {
+    std::vector<Ray> GenerateRays(unsigned int spp) const {
       std::vector<Ray> rays;
       rays.reserve(width * height * spp);
 
@@ -30,11 +32,11 @@ namespace rt {
       glm::vec3 V = U*near*std::tan(fovy/2.f);
       glm::vec3 H = R*near*((float)width/height)*std::tan(fovy/2.f);
 
-      for (unsigned int x = 0; x < width; ++x) {
-        for (unsigned int y = 0; y < height; ++y) {
+      for (unsigned int y = 0; y < height; ++y) {
+        for (unsigned int x = 0; x < width; ++x) {
           for (unsigned int s = 0; s < spp; ++s) {
             glm::vec3 p = ref + ((float)2*x/width - 1) * H + (1 - (float)2*y/height) * V;
-            rays.emplace_back(p, glm::normalize(p - eye));
+            rays.emplace_back(eye, glm::normalize(p - eye));
           }
         }
       }

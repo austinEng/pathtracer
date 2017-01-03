@@ -1,7 +1,6 @@
 #include <iostream>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-// #include <tiny_obj_loader.h>
 
 #include <geometry/polygon.h>
 #include <spatial_acceleration/geometry.h>

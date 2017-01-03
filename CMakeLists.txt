@@ -19,14 +19,14 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -funroll-loops -ftree-vectorize")
 
-include_directories(${GRAPHICS_LIBS_DIR}/include)
-link_directories(${GRAPHICS_LIBS_DIR}/lib)
-
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -fopt-info-vec-optimized -ftree-vectorizer-verbose=3")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 set(INCLUDE_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}")
 set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_TYPE}")
+
+include_directories(${GRAPHICS_LIBS_DIR}/include)
+link_directories(${GRAPHICS_LIBS_DIR}/lib)
 
 add_subdirectory(src)
 

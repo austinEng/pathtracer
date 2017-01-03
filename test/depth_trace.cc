@@ -1,7 +1,6 @@
 #include <iostream>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-// #include <tiny_obj_loader.h>
 
 #include <geometry/polygon.h>
 #include <intersection/geometry.h>
@@ -10,6 +9,11 @@
 #include <spatial_acceleration/bound.h>
 #include <spatial_acceleration/bvh_tree.h>
 #include <raytrace/context.h>
+
+#include <OpenEXR/ImfHeader.h>
+#include <OpenEXR/ImfChannelList.h>
+#include <OpenEXR/ImfPixelType.h>
+#include <OpenEXR/ImfOutputFile.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -39,8 +43,6 @@ int main(int argc, char** argv) {
   ) / 2.f;
   camera.eye = camera.tgt + glm::vec3(0,0,1) * bound.extent(1) / 2.f / std::atan(camera.fovy / 2.f);
 
-  std::cout << camera.eye.z - camera.tgt.z << std::endl;
-
   std::vector<Ray> rays = std::move(camera.GenerateRays(1));
 
   std::cout << "Tracing " << rays.size() << " rays" << std::endl;
@@ -57,7 +59,31 @@ int main(int argc, char** argv) {
     }
   }
 
-  std::cout << min << " --> " << max << std::endl;
+  std::vector<float> depths(intersections.size());
+
+  for (unsigned int i = 0; i < intersections.size(); ++i) {
+    if (intersections[i].hit) {
+      depths[i] = (max - intersections[i].t) / (max - min);
+    } else {
+      depths[i] = 0;
+    }
+  }
+
+  Imf::Header header(camera.width, camera.height);
+  header.channels().insert ("Z", Imf::Channel(Imf::FLOAT));
+
+  std::string fname = std::string(argv[1]) + ".exr";
+  Imf::OutputFile file(fname.c_str(), header); 
+
+  Imf::FrameBuffer frameBuffer; 
+  frameBuffer.insert("Z",          // name
+    Imf::Slice(Imf::FLOAT,         // type
+    (char*)depths.data(),          // base
+    sizeof(float)*1,               // xStride
+    sizeof(float)*camera.width));  // yStride
+
+  file.setFrameBuffer(frameBuffer);
+  file.writePixels(camera.height);
 
   return 0;
 }
