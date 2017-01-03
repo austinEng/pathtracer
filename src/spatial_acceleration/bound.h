@@ -5,36 +5,50 @@
 #include <limits>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <ae_core/simd/types.h>
 
 class Bound {
+#define PAD_BOUND
+#ifdef PAD_BOUND
+#define N 4
+#else
+#define N 3
+#endif
 private:
-  float dims[8];
+  union {
+    float dims[2*N];
+    struct {
+      SIMD::Float<N> _min;
+      SIMD::Float<N> _max;
+    };
+  };
+  
 
 public:
 
   Bound() {
-    for (unsigned int d = 0; d < 4; ++d) {
+    for (unsigned int d = 0; d < N; ++d) {
       min(d) = std::numeric_limits<float>::max();
     }
-    for (unsigned int d = 0; d < 4; ++d) {
+    for (unsigned int d = 0; d < N; ++d) {
       max(d) = std::numeric_limits<float>::lowest();
     }
   }
 
   float& min(unsigned int i) {
-    return dims[i];
+    return _min[i];
   }
 
   float& max(unsigned int i) {
-    return dims[i + 4];
+    return _max[i];
   }
 
   float min(unsigned int i) const {
-    return dims[i];
+    return _min[i];
   }
 
   float max(unsigned int i) const {
-    return dims[i + 4];
+    return _max[i];
   }
 
   float extent(unsigned int i) const {
@@ -52,31 +66,30 @@ public:
   }
 
   void merge(const Bound& other) {
+    SIMD::Float<N> lmask = other._min < _min;
+    SIMD::Float<N> umask = other._max > _max;
 
-    int islower[4];
-    int isgreater[4];
-    for (unsigned int d = 0; d < 4; ++d) {
-      islower[d] = other.min(d) < min(d);
-      isgreater[d] = other.max(d) > max(d);
-    }
-    for (unsigned int d = 0; d < 4; ++d) {
-      min(d) = other.min(d) * islower[d] + min(d) * !islower[d];
-      max(d) = other.max(d) * isgreater[d] + max(d) * !isgreater[d];
+    for (unsigned int d = 0; d < N; ++d) {
+      min(d) = other.min(d) * lmask[d] + min(d) * !lmask[d];
+      max(d) = other.max(d) * umask[d] + max(d) * !umask[d];
     }
   }
 
   void merge(const glm::vec3& point) {
 
+    #ifdef PAD_BOUND
     glm::vec4 p(point, 1);
-    int islower[4];
-    int isgreater[4];
-    for (unsigned int d = 0; d < 4; ++d) {
-      islower[d] = p[d] < min(d);
-      isgreater[d] = p[d] > max(d);
-    }
-    for (unsigned int d = 0; d < 4; ++d) {
-      min(d) = p[d] * islower[d] + min(d) * !islower[d];
-      max(d) = p[d] * isgreater[d] + max(d) * !isgreater[d];
+    SIMD::Float<N>* pt = reinterpret_cast<SIMD::Float<N>*>(&p);
+    #else
+    const SIMD::Float<N>* pt = reinterpret_cast<const SIMD::Float<N>*>(&point);
+    #endif
+
+    SIMD::Float<N> lmask = *pt < _min;
+    SIMD::Float<N> umask = *pt > _max;
+
+    for (unsigned int d = 0; d < N; ++d) {
+      min(d) = (*pt)[d] * lmask[d] + min(d) * !lmask[d];
+      max(d) = (*pt)[d] * umask[d] + max(d) * !umask[d];
     }
   }
 
@@ -85,6 +98,8 @@ public:
     b.merge(b2);
     return b;
   }
+
+  #undef N
 };
 
 std::ostream& operator<<(std::ostream& os, const Bound& b) {    
@@ -96,26 +111,83 @@ std::ostream& operator<<(std::ostream& os, const Bound& b) {
 }  
 
 template <unsigned int N>
-class BoundSOA {
-  static const int _N = N % 4 == 0 ? N : N + 4 - (N % 4);
-  float dims[2*3*_N];
-  // x,x,x,_,y,y,y_,z,z,z_,X,X,X,_,Y,Y,Y,_,Z,Z,Z,_
+class BoundSoA {
+
+  union {
+    float dims[6*N];
+    struct {
+      SIMD::Float<N> _minX;
+      SIMD::Float<N> _minY;
+      SIMD::Float<N> _minZ;
+      SIMD::Float<N> _maxX;
+      SIMD::Float<N> _maxY;
+      SIMD::Float<N> _maxZ;
+    };
+  };
 
   public:
 
   float& min(unsigned int n, unsigned int i) {
-    return dims[i*_N + n];
+    return dims[i*N + n];
   }
 
   float& max(unsigned int n, unsigned int i) {
-    return dims[i*_N + n + 3*_N];
+    return dims[i*N + n + 3*N];
   }
 
   float min(unsigned int n, unsigned int i) const {
-    return dims[i*_N + n];
+    return dims[i*N + n];
   }
 
   float max(unsigned int n, unsigned int i) const {
-    return dims[i*_N + n + 3*_N];
+    return dims[i*N + n + 3*N];
+  }
+
+  float& minX(unsigned int n) {
+    return _minX[n];
+  }
+
+  float minX(unsigned int n) const {
+    return _minX[n];
+  }
+
+  float& minY(unsigned int n) {
+    return _minY[n];
+  }
+
+  float minY(unsigned int n) const {
+    return _minY[n];
+  }
+
+  float& minZ(unsigned int n) {
+    return _minZ[n];
+  }
+
+  float minZ(unsigned int n) const {
+    return _minZ[n];
+  }
+
+  float& maxX(unsigned int n) {
+    return _maxX[n];
+  }
+
+  float maxX(unsigned int n) const {
+    return _maxX[n];
+  }
+
+  float& maxY(unsigned int n) {
+    return _maxY[n];
+  }
+
+  float maxY(unsigned int n) const {
+    return _maxY[n];
+  }
+
+  float& maxZ(unsigned int n) {
+    return _maxZ[n];
+  }
+
+  float maxZ(unsigned int n) const {
+    return _maxZ[n];
   }
 };

@@ -6,6 +6,7 @@
 #include <vector>
 #include <deque>
 #include <memory>
+#include <ae_core/simd/types.h>
 
 template <unsigned int B, unsigned int L>
 class SpatialTree {
@@ -55,7 +56,13 @@ public:
 
   class alignas(64) NodeGroup {
     public:
-    BoundSOA<B> bounds;
+    std::shared_ptr<object_t> objects[B*L] = { nullptr };
+    union {
+      NodeGroup* children[B] = { nullptr };
+      int childIndices[B];
+    };
+    BoundSoA<B> bound;
+    SIMD::Float<B> leaf;
   };
 
   virtual Node* internalBuild(std::vector<std::shared_ptr<object_t>> &objects, Node* arena) = 0;
