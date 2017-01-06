@@ -111,7 +111,7 @@ std::ostream& operator<<(std::ostream& os, const Bound& b) {
 }  
 
 template <unsigned int N>
-class BoundSoA {
+class BoundGroup {
 
   union {
     float dims[6*N];
@@ -126,6 +126,15 @@ class BoundSoA {
   };
 
   public:
+
+  BoundGroup() {
+    for (unsigned int i = 0; i < 3*N; ++i) {
+      dims[i] = std::numeric_limits<float>::max();
+    }
+    for (unsigned int i = 3*N; i < 6*N; ++i) {
+      dims[i] = std::numeric_limits<float>::lowest();
+    }
+  }
 
   float& min(unsigned int n, unsigned int i) {
     return dims[i*N + n];
@@ -191,3 +200,15 @@ class BoundSoA {
     return _maxZ[n];
   }
 };
+
+template <unsigned int N>
+std::ostream& operator<<(std::ostream& os, const BoundGroup<N>& b) {    
+  os << "Bound" << N << std::endl;
+  for (unsigned int i = 0; i < N; ++i) {
+    os << "  " << i << ":" << std::endl;
+    os << "    " <<  b.minX(i) << " --> " << b.maxX(i) << std::endl;
+    os << "    " <<  b.minY(i) << " --> " << b.maxY(i) << std::endl;
+    os << "    " <<  b.minZ(i) << " --> " << b.maxZ(i) << std::endl;
+  }
+  return os;  
+}  

@@ -33,12 +33,17 @@ int main(int argc, char** argv) {
   camera.height = 600;
   camera.fovy = 45 * 3.14159265358979 / 180;
 
-  Bound& bound = rtContext.bvhTree.root.bound;
+  Bound bound;
+  for (const Polygon& poly : polygons) {
+    for (const glm::vec3 &p : poly.positions) {
+      bound.merge(p);
+    }
+  }
 
   camera.tgt = glm::vec3(
     bound.max(0) + bound.min(0),
     bound.max(1) + bound.min(1),
-    bound.max(2) + bound.min(2)
+    2*bound.max(2)
   ) / 2.f;
   camera.eye = camera.tgt + glm::vec3(0,0,1) * bound.extent(1) / 2.f / std::atan(camera.fovy / 2.f);
 

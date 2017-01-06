@@ -8,8 +8,42 @@
 
 namespace accel {
 
+class Triangle;
+template <unsigned int N>
+class TriangleGroup {
+  public:
+  
+  union {
+    float vals[3*3*N];
+    struct {
+      union {
+        struct {
+          SIMD::Float<N> xs;
+          SIMD::Float<N> ys;
+          SIMD::Float<N> zs;
+        };
+        SIMD::Float<3*N> vals;
+      };
+    } positions[3];
+  };
+  SIMD::Float<N> mask;
+
+  TriangleGroup() {
+    for (unsigned int i = 0; i < N; ++i) {
+      mask[i] = 0.f;
+    }
+  }
+
+  void setPrimitive(unsigned int idx, const accel::Triangle &tri);
+};
+
 class Triangle {
   public:
+
+  template <unsigned int N>
+  struct group {
+    typedef TriangleGroup<N> type;
+  };
 
   glm::vec3 positions[3]; // counter-clockwise winding order
   glm::vec3 centroid;
@@ -27,17 +61,13 @@ class Triangle {
 };
 
 template <unsigned int N>
-class TriangleGroup {
-  public:
-  
-  union {
-    float vals[3*N];
-    struct {
-      SIMD::Float<N> xs;
-      SIMD::Float<N> ys;
-      SIMD::Float<N> zs;
-    };
-  };
-};
+void TriangleGroup<N>::setPrimitive(unsigned int idx, const accel::Triangle &tri) {
+  for (unsigned int i = 0; i < 3; ++i) {
+    positions[i].xs[idx] = tri.positions[i].x;
+    positions[i].ys[idx] = tri.positions[i].y;
+    positions[i].zs[idx] = tri.positions[i].z;
+  }
+  mask[idx] = 1.f;
+}
 
 }

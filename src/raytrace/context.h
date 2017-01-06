@@ -22,7 +22,7 @@ class Context {
     std::vector<Intersection> intersections(rays.size());
 
     for (unsigned int i = 0; i < rays.size(); ++i) {
-      intersections[i] = Traverse(bvhTree, -1, rays[i]);
+      intersections[i] = Traverse(bvhTree, 0, rays[i]);
     }
 
     return intersections;

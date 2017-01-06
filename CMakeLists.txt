@@ -28,6 +28,12 @@ set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_T
 include_directories(${GRAPHICS_LIBS_DIR}/include)
 link_directories(${GRAPHICS_LIBS_DIR}/lib)
 
+option(GROUP_ACCELERATION_NODES "Group acceleration tree nodes for faster traversal" ON)
+
+if (GROUP_ACCELERATION_NODES)
+add_definitions(-DGROUP_ACCELERATION_NODES)
+endif()
+
 add_subdirectory(src)
 
 enable_testing()
