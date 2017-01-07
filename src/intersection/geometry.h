@@ -55,38 +55,68 @@ Intersection Intersect(const accel::Triangle &prim, const Ray &ray) {
 
 template <unsigned int N>
 Intersection Intersect(const accel::TriangleGroup<N> &prims, const Ray &ray) {
-  Intersection i1;
-  Intersection i2;
+  // for (unsigned int i = 0; i < N; ++i) {
+  //   if (prims.mask[i]) {
+  //     i2 = TriangleIntersection(ray,
+  //       glm::vec3(prims.positions[0].xs[i], prims.positions[0].ys[i], prims.positions[0].zs[i]),
+  //       glm::vec3(prims.positions[1].xs[i], prims.positions[1].ys[i], prims.positions[1].zs[i]),
+  //       glm::vec3(prims.positions[2].xs[i], prims.positions[2].ys[i], prims.positions[2].zs[i])
+  //     );
+  //     if (i2.hit && i2.t > 0 && (i2.t < i1.t || !i1.hit)) {
+  //       std::swap(i1, i2);
+  //     }
+  //   }
+  // }
 
+  // return i1;  
+  SIMD::Float<3*N> e1 = prims.positions[1].vals - prims.positions[0].vals;
+  SIMD::Float<3*N> e2 = prims.positions[2].vals - prims.positions[0].vals;
+  SIMD::Float<3*N> T;
+  for (unsigned int i = 0; i < N; ++i) T[i] = ray.pos.x - prims.positions[1].vals[i];
+  for (unsigned int i = N; i < 2*N; ++i) T[i] = ray.pos.y - prims.positions[1].vals[i];
+  for (unsigned int i = 2*N; i < 3*N; ++i) T[i] = ray.pos.z - prims.positions[1].vals[i];
+
+  SIMD::Float<3*N> P; // cross(ray.dir, e2)
+  SIMD::Float<3*N> Q; // cross(T, e1)
   for (unsigned int i = 0; i < N; ++i) {
-    if (prims.mask[i]) {
-      i2 = TriangleIntersection(ray,
-        glm::vec3(prims.positions[0].xs[i], prims.positions[0].ys[i], prims.positions[0].zs[i]),
-        glm::vec3(prims.positions[1].xs[i], prims.positions[1].ys[i], prims.positions[1].zs[i]),
-        glm::vec3(prims.positions[2].xs[i], prims.positions[2].ys[i], prims.positions[2].zs[i])
-      );
-      if (i2.hit && i2.t > 0 && (i2.t < i1.t || !i1.hit)) {
-        std::swap(i1, i2);
-      }
-    }
+    P[i] = ray.dir.y*e2[i+2*N] - ray.dir.z*e2[i+N];
+    P[i+N] = ray.dir.z*e2[i] - ray.dir.x*e2[i+2*N];
+    P[i+2*N] = ray.dir.x*e2[i+N] - ray.dir.y*e2[i];
+
+    Q[i] = T[i+N]*e1[i+2*N] - T[i+2*N]*e1[i+N];
+    Q[i+N] = T[i+2*N]*e1[i] - T[i]*e1[i+2*N];
+    Q[i+2*N] = T[i]*e1[i+N] - T[i+N]*e1[i];
   }
 
-  return i1;  
-  // SIMD::Float<3*N> e1 = prims.positions[1].vals - prims.positions[0].vals;
-  // SIMD::Float<3*N> e2 = prims.positions[2].vals - prims.positions[0].vals;
-  // SIMD::Float<3*N> T;
-  // for (unsigned int i = 0; i < N; ++i) T[i] = ray.pos.x;
-  // for (unsigned int i = N; i < 2*N; ++i) T[i] = ray.pos.y;
-  // for (unsigned int i = 2*N; i < 3*N; ++i) T[i] = ray.pos.z;
-  // T -= prims.positions[1].vals;
+  SIMD::Float<N> det;
+  SIMD::Float<N> denom;
+  SIMD::Float<N> u;
+  SIMD::Float<N> v;
 
-  // SIMD::Float<3*N> P;
-  // SIMD::Float<3*N> Q;
+  for (unsigned int i = 0; i < N; ++i) det[i] = e1[i] * P[i] + e1[i+N] * P[i+N] + e1[i+2*N] * P[i+2*N];
+  for (unsigned int i = 0; i < N; ++i) denom[i] = 1.f / det[i];
+  for (unsigned int i = 0; i < N; ++i) u[i] = T[i]*P[i] + T[i+N]*P[i+N] + T[i+2*N]*P[i+2*N];
+  for (unsigned int i = 0; i < N; ++i) v[i] = Q[i]*ray.dir.x + Q[i+N]*ray.dir.y + Q[i+2*N]*ray.dir.z;
+  v *= denom;
 
-  // SIMD::Float<N> det;
-  // for (unsigned int i = 0; i < N; ++i) det[i] = e1[i] * P[i] + e1[i+N] * P[i+N] + e1[i+2*N] * P[i+2*N];
-  // SIMD::Float<N> denom;
-  // for (unsigned int i = 0; i < N; ++i) denom[i] = 1.f / det[i];
+  SIMD::Float<N> t;
+  for (unsigned int i = 0; i < N; ++i) t[i] = Q[i]*e2[i] + Q[i+N]*e2[i+N] + Q[i+2*N]*e2[i+2*N];
+  t *= denom;
+
+  SIMD::Bool<N> hit;
+  for (unsigned int i = 0; i < N; ++i) hit[i] = u[i] >= 0 && u[i] < 1.f && v[i] >= 0 && u[i]+v[i] < 1.f && !fequal(0.f, det[i]);
+
+  Intersection inter;
+  inter.t = std::numeric_limits<float>::max();
+  for (unsigned int i = 0; i < N; ++i) {
+    if (hit[i] && t[i] < inter.t && prims.mask[i]) {
+      inter.t = t[i];
+    }
+  }
+  inter.hit = any(hit);
+  inter.point = ray.pos + inter.t * ray.dir;
+
+  return inter;
 }
 
 template <typename G>

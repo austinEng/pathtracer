@@ -2,15 +2,19 @@
 file(GLOB ae_graphics_headers
   core/*.h
   geometry/*.h
+  importers/*.h
   spatial_acceleration/*.h  
   intersection/*.h
+  raytrace/*.h
 )
 
 file(GLOB ae_graphics_source
   core/*.cc
   geometry/*.cc
+  importers/*.cc
   spatial_acceleration/*.cc  
   intersection/*.cc
+  raytrace/*.cc
 )
 
 configure_file("config.inl" "${CMAKE_CURRENT_BINARY_DIR}/config_impl.h")
@@ -29,3 +33,7 @@ install(FILES ae_graphics-config.cmake DESTINATION ${LIB_DEST})
 install(EXPORT ae_graphics DESTINATION "${LIB_DEST}")
 install(FILES ${ae_graphics_headers} DESTINATION "${INCLUDE_DEST}")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config_impl.h DESTINATION "${LIB_DEST}")
+
+
+# add_executable(pixel_view viewport/pixel_view.cc)
+# target_link_libraries(pixel_view GLEW glfw3 dl X11 Xrandr Xi Xinerama Xcursor pthread GL)

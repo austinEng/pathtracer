@@ -59,7 +59,12 @@ public:
       for (unsigned int i = 0; i < B; ++i) {
         if (nodes[i] != nullptr) {
           isLeaf[i] = nodes[i]->isLeaf;
+        } else {
+          isLeaf[i] = 0.f;
         }
+      }
+      for (unsigned int i = 0; i < B; ++i) {
+        children[i] = -1;
       }
     }
     BoundGroup<B> bound;

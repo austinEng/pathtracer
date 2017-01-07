@@ -81,7 +81,9 @@ void TreeBase<P, B, L, T>::flatten(build_t* root, unsigned int nodeCount) {
     map.erase(group);
     delete group;
   }
+  // std::cout << this->prims.size() << std::endl;
   this->prims.clear();
+  // std::cout << this->prim_groups.size() << std::endl;
   this->root = &this->nodes[0];
 }
   

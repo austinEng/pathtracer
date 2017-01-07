@@ -108,7 +108,7 @@ Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
   Intersection i2;
 
   // check node intersections
-  SIMD::Float<B> t = IntersectBoundGroup(n.bound, ray);
+  SIMD::Float<B> t = std::move(IntersectBoundGroup(n.bound, ray));
   std::pair<float, int> ts[B];
   for (unsigned int i = 0; i < B; ++i) {
     int idx = n.children[i];

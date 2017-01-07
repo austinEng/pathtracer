@@ -28,6 +28,9 @@ set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_T
 include_directories(${GRAPHICS_LIBS_DIR}/include)
 link_directories(${GRAPHICS_LIBS_DIR}/lib)
 
+set(ENV{PKG_CONFIG_PATH} "${GRAPHICS_LIBS_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+find_package(PkgConfig)
+
 option(GROUP_ACCELERATION_NODES "Group acceleration tree nodes for faster traversal" ON)
 
 if (GROUP_ACCELERATION_NODES)
