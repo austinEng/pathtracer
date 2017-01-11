@@ -2,6 +2,7 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 
+#include <chrono>
 #include <geometry/polygon.h>
 #include <intersection/geometry.h>
 #include <spatial_acceleration/geometry.h>
@@ -22,11 +23,23 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  std::chrono::time_point<std::chrono::steady_clock> start, end;
+
   std::cout << "Loading obj file " << argv[1] << std::endl;
+  start = std::chrono::steady_clock::now();
   std::vector<Polygon> polygons = LoadObj<Polygon>(argv[1]);
+  end = std::chrono::steady_clock::now();
+  std::cout << "Elapsed: " << std::chrono::duration <double, std::milli>(end - start).count() << "ms" << std::endl;
+  std::cout << std::endl;
 
   rt::Context rtContext;
+  std::cout << "Building tree for " << polygons.size() << " polygons" << std::endl;
+  start = std::chrono::steady_clock::now();
   rtContext.initialize(polygons);
+  end = std::chrono::steady_clock::now();
+  std::cout << "Elapsed: " << std::chrono::duration <double, std::milli>(end - start).count() << "ms" << std::endl;
+  std::cout << std::endl;
+
 
   rt::Camera<::Camera> camera;
   camera.width = 800;
@@ -50,9 +63,13 @@ int main(int argc, char** argv) {
   std::vector<Ray> rays = std::move(camera.GenerateRays(1));
 
   std::cout << "Tracing " << rays.size() << " rays" << std::endl;
-
-  std::vector<Intersection> intersections = std::move(rtContext.trace(rays));
   
+  start = std::chrono::steady_clock::now();
+  std::vector<Intersection> intersections = std::move(rtContext.trace(rays));
+  end = std::chrono::steady_clock::now();
+  std::cout << "Elapsed: " << std::chrono::duration <double, std::milli>(end - start).count() << "ms" << std::endl;
+  std::cout << std::endl;
+
   float min = std::numeric_limits<float>::max();
   float max = std::numeric_limits<float>::lowest();
 

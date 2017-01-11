@@ -15,9 +15,9 @@ void TreeBase<P, B, L, T>::build(const std::vector<O> &objects) {
   build_t* root = InternalBuild(prims, arena, nodeCount);
   flatten(root, nodeCount);
 
-  std::cout << this->nodes.size() << " nodes" << std::endl;
+  // std::cout << this->nodes.size() << " nodes" << std::endl;
   free(arena);
-  std::cout << this->root->bound << std::endl;
+  // std::cout << this->root->bound << std::endl;
 }
 
 #if GROUP_ACCELERATION_NODES
