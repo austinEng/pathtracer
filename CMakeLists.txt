@@ -25,17 +25,24 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(INCLUDE_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}")
 set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_TYPE}")
 
-include_directories(${GRAPHICS_LIBS_DIR}/include)
-link_directories(${GRAPHICS_LIBS_DIR}/lib)
-
-set(ENV{PKG_CONFIG_PATH} "${GRAPHICS_LIBS_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-find_package(PkgConfig)
+set(GRAPHICS_LIBS_PREFIX "" CACHE PATH "Path to installation of graphics libs")
 
 option(GROUP_ACCELERATION_NODES "Group acceleration tree nodes for faster traversal" ON)
+option(PAD_BOUNDS "Pad bounding boxes for faster 4-wide SIMD operations" ON)
 
 if (GROUP_ACCELERATION_NODES)
 add_definitions(-DGROUP_ACCELERATION_NODES)
 endif()
+
+if (PAD_BOUNDS)
+add_definitions(-DPAD_BOUNDS)
+endif()
+
+include_directories(${GRAPHICS_LIBS_PREFIX}/include)
+link_directories(${GRAPHICS_LIBS_PREFIX}/lib)
+
+set(ENV{PKG_CONFIG_PATH} "${GRAPHICS_LIBS_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+find_package(PkgConfig)
 
 add_subdirectory(src)
 

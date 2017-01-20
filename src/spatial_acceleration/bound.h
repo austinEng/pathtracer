@@ -8,8 +8,7 @@
 #include <ae_core/simd/types.h>
 
 class Bound {
-#define PAD_BOUND
-#ifdef PAD_BOUND
+#ifdef PAD_BOUNDS
 #define N 4
 #else
 #define N 3
@@ -77,7 +76,7 @@ public:
 
   void merge(const glm::vec3& point) {
 
-    #ifdef PAD_BOUND
+    #ifdef PAD_BOUNDS
     glm::vec4 p(point, 1);
     SIMD::Float<N>* pt = reinterpret_cast<SIMD::Float<N>*>(&p);
     #else
