@@ -9,25 +9,25 @@
 #include <core/util.h>
 #include <spatial_acceleration/primitive.h>
 
-Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p1, const glm::vec3 &p2, const glm::vec3 &p3) {
+Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2) {
 
   // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
   Intersection inter;
 
-  glm::vec3 e1 = p2 - p1;
-  glm::vec3 e2 = p3 - p1;
+  glm::vec3 e0 = p1 - p0;
+  glm::vec3 e1 = p2 - p0;
   
-  glm::vec3 T = ray.pos - p1;
-  glm::vec3 P = glm::cross(ray.dir, e2);
-  glm::vec3 Q = glm::cross(T, e1);
+  glm::vec3 T = ray.pos - p0;
+  glm::vec3 P = glm::cross(ray.dir, e1);
+  glm::vec3 Q = glm::cross(T, e0);
 
-  float det = glm::dot(e1, P);
+  float det = glm::dot(e0, P);
   float denom = 1.f / det;
 
   float u = glm::dot(T, P) * denom;
   float v = glm::dot(Q, ray.dir) * denom;
 
-  inter.t = glm::dot(Q, e2) * denom;
+  inter.t = glm::dot(Q, e1) * denom;
   inter.hit = (u >=0 && u < 1.f && v >= 0 && u+v < 1.f && !fequal(0.f, det));
   inter.point = ray.pos + inter.t * ray.dir;
 
@@ -40,24 +40,31 @@ Intersection Intersect(const accel::Triangle &prim, const Ray &ray) {
 
 template <unsigned int N>
 Intersection Intersect(const accel::TriangleGroup<N> &prims, const Ray &ray) {
-
-  SIMD::Float<3*N> e1 = prims.positions[1].vals - prims.positions[0].vals;
-  SIMD::Float<3*N> e2 = prims.positions[2].vals - prims.positions[0].vals;
+  // [         p0's         ] [         p1's         ] [         p2's         ]
+  // [  xs  ][  ys  ][  zs  ] 
+  // [ xxxx ][ yyyy ][ zzzz ]
+  SIMD::Float<3*N> e0 = prims.positions[1].vals - prims.positions[0].vals;
+  SIMD::Float<3*N> e1 = prims.positions[2].vals - prims.positions[0].vals;
   SIMD::Float<3*N> T;
-  for (unsigned int i = 0; i < N; ++i) T[i] = ray.pos.x - prims.positions[1].vals[i];
-  for (unsigned int i = N; i < 2*N; ++i) T[i] = ray.pos.y - prims.positions[1].vals[i];
-  for (unsigned int i = 2*N; i < 3*N; ++i) T[i] = ray.pos.z - prims.positions[1].vals[i];
+
+  #define X i
+  #define Y i+N
+  #define Z i+2*N
+
+  for (unsigned int i = 0; i < N; ++i) T[X] = ray.pos.x - prims.positions[0].xs[i];
+  for (unsigned int i = 0; i < N; ++i) T[Y] = ray.pos.y - prims.positions[0].ys[i];
+  for (unsigned int i = 0; i < N; ++i) T[Z] = ray.pos.z - prims.positions[0].zs[i];
 
   SIMD::Float<3*N> P; // cross(ray.dir, e2)
   SIMD::Float<3*N> Q; // cross(T, e1)
   for (unsigned int i = 0; i < N; ++i) {
-    P[i] = ray.dir.y*e2[i+2*N] - ray.dir.z*e2[i+N];
-    P[i+N] = ray.dir.z*e2[i] - ray.dir.x*e2[i+2*N];
-    P[i+2*N] = ray.dir.x*e2[i+N] - ray.dir.y*e2[i];
+    P[X] = ray.dir.y*e1[Z] - ray.dir.z*e1[Y];
+    P[Y] = ray.dir.z*e1[X] - ray.dir.x*e1[Z];
+    P[Z] = ray.dir.x*e1[Y] - ray.dir.y*e1[X];
 
-    Q[i] = T[i+N]*e1[i+2*N] - T[i+2*N]*e1[i+N];
-    Q[i+N] = T[i+2*N]*e1[i] - T[i]*e1[i+2*N];
-    Q[i+2*N] = T[i]*e1[i+N] - T[i+N]*e1[i];
+    Q[X] = T[Y]*e0[Z] - T[Z]*e0[Y];
+    Q[Y] = T[Z]*e0[X] - T[X]*e0[Z];
+    Q[Z] = T[X]*e0[Y] - T[Y]*e0[X];
   }
 
   SIMD::Float<N> det;
@@ -65,18 +72,23 @@ Intersection Intersect(const accel::TriangleGroup<N> &prims, const Ray &ray) {
   SIMD::Float<N> u;
   SIMD::Float<N> v;
 
-  for (unsigned int i = 0; i < N; ++i) det[i] = e1[i] * P[i] + e1[i+N] * P[i+N] + e1[i+2*N] * P[i+2*N];
+  for (unsigned int i = 0; i < N; ++i) det[i] = e0[X] * P[X] + e0[Y] * P[Y] + e0[Z] * P[Z];
   for (unsigned int i = 0; i < N; ++i) denom[i] = 1.f / det[i];
-  for (unsigned int i = 0; i < N; ++i) u[i] = T[i]*P[i] + T[i+N]*P[i+N] + T[i+2*N]*P[i+2*N];
-  for (unsigned int i = 0; i < N; ++i) v[i] = Q[i]*ray.dir.x + Q[i+N]*ray.dir.y + Q[i+2*N]*ray.dir.z;
+  for (unsigned int i = 0; i < N; ++i) u[i] = T[X]*P[X] + T[Y]*P[Y] + T[Z]*P[Z];
+  u *= denom;
+  for (unsigned int i = 0; i < N; ++i) v[i] = Q[X]*ray.dir.x + Q[Y]*ray.dir.y + Q[Z]*ray.dir.z;
   v *= denom;
 
   SIMD::Float<N> t;
-  for (unsigned int i = 0; i < N; ++i) t[i] = Q[i]*e2[i] + Q[i+N]*e2[i+N] + Q[i+2*N]*e2[i+2*N];
+  for (unsigned int i = 0; i < N; ++i) t[i] = Q[X]*e1[X] + Q[Y]*e1[Y] + Q[Z]*e1[Z];
   t *= denom;
 
+  #undef X
+  #undef Y
+  #undef Z
+
   SIMD::Bool<N> hit;
-  for (unsigned int i = 0; i < N; ++i) hit[i] = u[i] >= 0 && u[i] < 1.f && v[i] >= 0 && u[i]+v[i] < 1.f && !fequal(0.f, det[i]);
+  for (unsigned int i = 0; i < N; ++i) hit[i] = (u[i] >= 0 && u[i] < 1.f && v[i] >= 0 && u[i]+v[i] < 1.f && !fequal(0.f, det[i]));
 
   Intersection inter;
   inter.t = std::numeric_limits<float>::max();

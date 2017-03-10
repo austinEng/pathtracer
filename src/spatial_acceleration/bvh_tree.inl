@@ -1,9 +1,12 @@
 
 template <typename P, unsigned int B, unsigned int L>
 typename BVH<P,B,L>::node_t* BVH<P,B,L>::InternalBuild(std::vector<P> &prims, node_t* arena, int &nodeCount) {
-  this->nodeCount = 0;
+  this->nodeCount = 1;
 
-  node_t* root = recbuild(prims, 0, prims.size(), &arena);
+  node_t* root = new(arena++) node_t();
+  root->isLeaf = false;
+  node_t* subroot = recbuild(prims, 0, prims.size(), &arena);
+  root->children[0] = subroot;  // root cannot be a leaf;
   nodeCount = this->nodeCount;
 
   return root;

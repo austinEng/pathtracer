@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -106,5 +107,11 @@ int main(int argc, char** argv) {
   file.setFrameBuffer(frameBuffer);
   file.writePixels(camera.height);
 
-  return 0;
+  // pid_t pid = fork();
+  // if (pid == 0) {
+  //   std::string command = std::string(EXRDISPLAY_PATH " -c Z -n -u ");
+  //   command.insert(command.size(), fname);
+  //   exit(system(command.c_str()));
+  // }
+  exit(0);
 }
