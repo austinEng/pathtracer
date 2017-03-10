@@ -100,12 +100,9 @@ SIMD::Float<N> IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray) {
 #if GROUP_ACCELERATION_NODES
 
 template <unsigned int B, unsigned int L>
-Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray) {
+void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray, Intersection** i1, Intersection** i2) {
   typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = tree.nodes[i];
-
-  Intersection i1;
-  Intersection i2;
 
   // check node intersections
   SIMD::Float<B> t = std::move(IntersectBoundGroup(n.bound, ray));
@@ -123,36 +120,30 @@ Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
   for (unsigned int i = 0; i < B; ++i) {
     unsigned int idx = ts[i].second;
     if (!n.isLeaf[idx]) {
-      if (ts[i].first >=0 && (ts[i].first < i1.t || !i1.hit)) {
-        i2 = Traverse(tree, n.children[idx], ray);
-        if (i2.hit && (i2.t < i1.t || !i1.hit)) {
-          std::swap(i1, i2);
+      if (ts[i].first >=0 && (ts[i].first < (*i1)->t || !(*i1)->hit)) {
+        InternalTraverse(tree, n.children[idx], ray, i1, i2);
+        if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
+          std::swap(*i1, *i2);
         }
       }
     } else {
       // check primitive intersections
-      i2 = Intersect(tree.prim_groups[n.primitives[idx]], ray);
-      if (i2.hit && (i2.t < i1.t || !i1.hit)) {
-        std::swap(i1, i2);
+      **i2 = Intersect(tree.prim_groups[n.primitives[idx]], ray);
+      if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
+        std::swap(*i1, *i2);
       }
     }
   }
-
-  return i1;
-
 }
 
 #else
 
 template <unsigned int B, unsigned int L>
-Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray) {
+void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray, Intersection** i1, Intersection** i2) {
   typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = tree.nodes[i];
 
-  Intersection i1;
-  Intersection i2;
   if (!n.isLeaf) {
-
     std::pair<float, int> ts[B];
     for (unsigned int i = 0; i < B; ++i) {
       int idx = n.children[i];
@@ -166,26 +157,39 @@ Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
     std::sort(std::begin(ts), std::end(ts));
 
     for (unsigned int i = 0; i < B; ++i) {
-      if (ts[i].first >=0 && (ts[i].first < i1.t || !i1.hit)) {
-        i2 = Traverse(tree, ts[i].second, ray);
-        if (i2.hit && (i2.t < i1.t || !i1.hit)) {
-          std::swap(i1, i2);
+      if (ts[i].first >=0 && (ts[i].first < (*i1)->t || !(*i1)->hit)) {
+        InternalTraverse(tree, ts[i].second, ray, i1, i2);
+        if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
+          std::swap(*i1, *i2);
         }
       }
     }   
   } else {
     for (unsigned int i = 0; i < L; ++i) {
       if (n.primitives[i] != -1) {
-        i2 = Intersect(tree.prims[n.primitives[i]], ray);
-        if (i2.hit && (i2.t < i1.t || !i1.hit)) {
-          std::swap(i1, i2);
+        **i2 = Intersect(tree.prims[n.primitives[i]], ray);
+        if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
+          std::swap(*i1, *i2);
         }
       }
     }
   }
-  
-  return i1;
+
 }
+
 #endif
+
+template <unsigned int B, unsigned int L>
+Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray) {
+  typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
+  const node_t& n = tree.nodes[i];
+
+  Intersection intersections[2];
+  Intersection* i1 = &intersections[0];
+  Intersection* i2 = &intersections[1];
+
+  InternalTraverse(tree, i, ray, &i1, &i2);
+  return *i1;
+}
 
 }

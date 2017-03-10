@@ -82,12 +82,15 @@ int main(int argc, char** argv) {
   }
 
   std::vector<float> depths(intersections.size());
+  std::vector<float> ray_depths(intersections.size());
 
   for (unsigned int i = 0; i < intersections.size(); ++i) {
     if (intersections[i].hit) {
       depths[i] = (max - intersections[i].t) / (max - min);
+      ray_depths[i] = intersections[i].depth;
     } else {
       depths[i] = 0;
+      ray_depths[i] = 0;
     }
   }
 
