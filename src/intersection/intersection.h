@@ -11,5 +11,4 @@ struct Intersection {
   float t = std::numeric_limits<float>::max();
   // bool backface;
   bool hit = false;
-  int depth = 0;
 };

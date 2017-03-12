@@ -45,14 +45,15 @@ template <unsigned int N>
 SIMD::Float<N> IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray) {
   glm::vec3 dir = 1.0f / ray.dir;
 
-  SIMD::Float<N> inmask;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] = 1.f;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] *= bound.minX(i) <= ray.pos.x;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] *= bound.minY(i) <= ray.pos.y;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] *= bound.minZ(i) <= ray.pos.z;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] *= bound.maxX(i) > ray.pos.x;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] *= bound.maxY(i) > ray.pos.y;
-  for (unsigned int i = 0; i < N; ++i) inmask[i] *= bound.maxZ(i) > ray.pos.z;
+  SIMD::Float<N> mask;
+  for (unsigned int i = 0; i < N; ++i) mask[i] = 1.f;
+  for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.minX(i) <= ray.pos.x;
+  for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.minY(i) <= ray.pos.y;
+  for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.minZ(i) <= ray.pos.z;
+  for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.maxX(i) > ray.pos.x;
+  for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.maxY(i) > ray.pos.y;
+  for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.maxZ(i) > ray.pos.z;
+  for (unsigned int i = 0; i < N; ++i) mask[i] = 1.f - mask[i];
 
   SIMD::Float<N> tx0;
   SIMD::Float<N> tx1;
@@ -74,26 +75,24 @@ SIMD::Float<N> IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray) {
   SIMD::Float<N> maxy;
   SIMD::Float<N> maxz;
 
-  for (unsigned int i = 0; i < N; ++i) minx[i] = (tx0[i] < tx1[i]) * tx0[i] + (tx0[i] >= tx1[i]) * tx1[i];
-  for (unsigned int i = 0; i < N; ++i) miny[i] = (ty0[i] < ty1[i]) * ty0[i] + (ty0[i] >= ty1[i]) * ty1[i];
-  for (unsigned int i = 0; i < N; ++i) minz[i] = (tz0[i] < tz1[i]) * tz0[i] + (tz0[i] >= tz1[i]) * tz1[i];
-  for (unsigned int i = 0; i < N; ++i) maxx[i] = (tx0[i] < tx1[i]) * tx1[i] + (tx0[i] >= tx1[i]) * tx0[i];
-  for (unsigned int i = 0; i < N; ++i) maxy[i] = (ty0[i] < ty1[i]) * ty1[i] + (ty0[i] >= ty1[i]) * ty0[i];
-  for (unsigned int i = 0; i < N; ++i) maxz[i] = (tz0[i] < tz1[i]) * tz1[i] + (tz0[i] >= tz1[i]) * tz0[i];
+  for (unsigned int i = 0; i < N; ++i) minx[i] = (tx0[i] < tx1[i] ? tx0[i] : tx1[i]);
+  for (unsigned int i = 0; i < N; ++i) miny[i] = (ty0[i] < ty1[i] ? ty0[i] : ty1[i]);
+  for (unsigned int i = 0; i < N; ++i) minz[i] = (tz0[i] < tz1[i] ? tz0[i] : tz1[i]);
+  for (unsigned int i = 0; i < N; ++i) maxx[i] = (tx0[i] > tx1[i] ? tx0[i] : tx1[i]);
+  for (unsigned int i = 0; i < N; ++i) maxy[i] = (ty0[i] > ty1[i] ? ty0[i] : ty1[i]);
+  for (unsigned int i = 0; i < N; ++i) maxz[i] = (tz0[i] > tz1[i] ? tz0[i] : tz1[i]);
 
   SIMD::Float<N> tn;
   SIMD::Float<N> tf;
 
-  for (unsigned int i = 0; i < N; ++i) tn[i] = (minx[i] > miny[i]) * minx[i] + (minx[i] <= miny[i]) * miny[i];
-  for (unsigned int i = 0; i < N; ++i) tn[i] = (tn[i] > minz[i]) * tn[i] + (tn[i] <= minz[i]) * minz[i];
-  for (unsigned int i = 0; i < N; ++i) tf[i] = (maxx[i] <= maxy[i]) * maxx[i] + (maxx[i] > maxy[i]) * maxy[i];
-  for (unsigned int i = 0; i < N; ++i) tf[i] = (tf[i] <= maxz[i]) * tf[i] + (tf[i] > maxz[i]) * maxz[i];
+  for (unsigned int i = 0; i < N; ++i) tn[i] = (minx[i] > miny[i] ? minx[i] : miny[i]);
+  for (unsigned int i = 0; i < N; ++i) tn[i] = (minz[i] > tn[i] ? minz[i] : tn[i]);
+  for (unsigned int i = 0; i < N; ++i) tf[i] = (maxx[i] < maxy[i] ? maxx[i] : maxy[i]);
+  for (unsigned int i = 0; i < N; ++i) tf[i] = (maxz[i] < tf[i] ? maxz[i] : tf[i]);
 
-  for (unsigned int i = 0; i < N; ++i) tn[i] = (tn[i] > tf[i]) * -1.f + (tn[i] <= tf[i]) * tn[i];
+  for (unsigned int i = 0; i < N; ++i) tn[i] = (tn[i] > tf[i] ? -1.f : tn[i]);
 
-  for (unsigned int i = 0; i < N; ++i) tn[i] *= inmask[i] != 1.f;
-
-  return tn;
+  return tn * mask;
 
 }
 
