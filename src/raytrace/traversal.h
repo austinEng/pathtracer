@@ -42,7 +42,7 @@ float IntersectBound(const Bound &bound, const Ray &ray) {
 }
 
 template <unsigned int N>
-SIMD::Float<N> IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray) {
+SIMD::Float<N>& IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray, SIMD::Float<N>& out) {
   glm::vec3 dir = 1.0f / ray.dir;
 
   SIMD::Float<N> mask;
@@ -53,7 +53,7 @@ SIMD::Float<N> IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray) {
   for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.maxX(i) > ray.pos.x;
   for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.maxY(i) > ray.pos.y;
   for (unsigned int i = 0; i < N; ++i) mask[i] *= bound.maxZ(i) > ray.pos.z;
-  for (unsigned int i = 0; i < N; ++i) mask[i] = 1.f - mask[i];
+  mask = 1.f - mask;
 
   SIMD::Float<N> tx0;
   SIMD::Float<N> tx1;
@@ -75,36 +75,40 @@ SIMD::Float<N> IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray) {
   SIMD::Float<N> maxy;
   SIMD::Float<N> maxz;
 
-  for (unsigned int i = 0; i < N; ++i) minx[i] = (tx0[i] < tx1[i] ? tx0[i] : tx1[i]);
-  for (unsigned int i = 0; i < N; ++i) miny[i] = (ty0[i] < ty1[i] ? ty0[i] : ty1[i]);
-  for (unsigned int i = 0; i < N; ++i) minz[i] = (tz0[i] < tz1[i] ? tz0[i] : tz1[i]);
-  for (unsigned int i = 0; i < N; ++i) maxx[i] = (tx0[i] > tx1[i] ? tx0[i] : tx1[i]);
-  for (unsigned int i = 0; i < N; ++i) maxy[i] = (ty0[i] > ty1[i] ? ty0[i] : ty1[i]);
-  for (unsigned int i = 0; i < N; ++i) maxz[i] = (tz0[i] > tz1[i] ? tz0[i] : tz1[i]);
+  SIMD::min(tx0, tx1, minx);
+  SIMD::min(ty0, ty1, miny);
+  SIMD::min(tz0, tz1, minz);
+  SIMD::max(tx0, tx1, maxx);
+  SIMD::max(ty0, ty1, maxy);
+  SIMD::max(tz0, tz1, maxz);
 
   SIMD::Float<N> tn;
   SIMD::Float<N> tf;
 
-  for (unsigned int i = 0; i < N; ++i) tn[i] = (minx[i] > miny[i] ? minx[i] : miny[i]);
-  for (unsigned int i = 0; i < N; ++i) tn[i] = (minz[i] > tn[i] ? minz[i] : tn[i]);
-  for (unsigned int i = 0; i < N; ++i) tf[i] = (maxx[i] < maxy[i] ? maxx[i] : maxy[i]);
-  for (unsigned int i = 0; i < N; ++i) tf[i] = (maxz[i] < tf[i] ? maxz[i] : tf[i]);
+  SIMD::max(minz, SIMD::max(minx, miny, tn), tn);
+  SIMD::min(maxz, SIMD::min(maxx, maxy, tf), tf);
 
   for (unsigned int i = 0; i < N; ++i) tn[i] = (tn[i] > tf[i] ? -1.f : tn[i]);
 
-  return tn * mask;
-
+  return SIMD::MULTIPLY(tn, mask, out);
 }
 
 #if GROUP_ACCELERATION_NODES
 
 template <unsigned int B, unsigned int L>
-void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray, Intersection** i1, Intersection** i2) {
+void InternalTraverse(
+      const accel::BVH<accel::Triangle, B, L> &tree, 
+      int i, 
+      const Ray& ray, 
+      Intersection** i1, 
+      Intersection** i2) {
+        
   typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = tree.nodes[i];
 
   // check node intersections
-  SIMD::Float<B> t = std::move(IntersectBoundGroup(n.bound, ray));
+  SIMD::Float<B> t;
+  IntersectBoundGroup(n.bound, ray, t);
   std::pair<float, int> ts[B];
   for (unsigned int i = 0; i < B; ++i) {
     int idx = n.children[i];
@@ -127,7 +131,8 @@ void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
       }
     } else {
       // check primitive intersections
-      **i2 = Intersect(tree.prim_groups[n.primitives[idx]], ray);
+      (*i2)->hit = false;
+      Intersect(tree.prim_groups[n.primitives[idx]], ray, **i2);
       if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
         std::swap(*i1, *i2);
       }
@@ -138,7 +143,13 @@ void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
 #else
 
 template <unsigned int B, unsigned int L>
-void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray, Intersection** i1, Intersection** i2) {
+void InternalTraverse(
+      const accel::BVH<accel::Triangle, B, L> &tree, 
+      int i, 
+      const Ray& ray, 
+      Intersection** i1, 
+      Intersection** i2) {
+        
   typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = tree.nodes[i];
 
@@ -166,7 +177,8 @@ void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
   } else {
     for (unsigned int i = 0; i < L; ++i) {
       if (n.primitives[i] != -1) {
-        **i2 = Intersect(tree.prims[n.primitives[i]], ray);
+        (*i2)->hit = false;
+        Intersect(tree.prims[n.primitives[i]], ray, **i2);
         if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
           std::swap(*i1, *i2);
         }
@@ -178,8 +190,83 @@ void InternalTraverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
 
 #endif
 
+template <unsigned int B, unsigned int L, unsigned int R>
+void InternalTraverse(
+    const accel::BVH<accel::Triangle, B, L> &tree, 
+    int i, 
+    const RayPacket<R>& ray_packet, 
+    Intersection intersections1[R],
+    Intersection intersections2[R],
+    unsigned long long &destinations) {
+
+  typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
+  const node_t& n = tree.nodes[i];
+
+  if (!n.isLeaf) {
+    std::pair<float, int> ts[B];
+    for (unsigned int i = 0; i < B; ++i) {
+      int idx = n.children[i];
+      if (idx >= 0) {
+        SIMD::Float<R> t;// = IntersectBound(tree.nodes[idx].bound, ray_packet);
+        unsigned int j = 0;
+        while (j < R) {
+          if (t[j] >= 0.f) break;
+          j++;
+        }
+        if (j == R) {
+          ts[i] = std::make_pair(-1.f, idx);
+        } else {
+          ts[i] = std::make_pair(t[j], idx);
+        }
+      } else {
+        ts[i] = std::make_pair(-1.f, idx);
+      }
+    }
+    std::sort(std::begin(ts), std::end(ts));
+
+    // for (unsigned int i = 0; i < B; ++i) {
+    //   if (ts[i].first >=0 && (ts[i].first < (*i1)->t || !(*i1)->hit)) {
+    //     InternalTraverse(tree, ts[i].second, ray, i1, i2);
+    //     if ((*i2)->hit && ((*i2)->t < (*i1)->t || !(*i1)->hit)) {
+    //       std::swap(*i1, *i2);
+    //     }
+    //   }
+    // }
+
+  } else {
+    Ray ray;
+    for (unsigned int i = 0; i < L; ++i) {
+      if (n.primitives[i] != -1) {
+        for (unsigned int j = 0; j < R; ++j) {
+          if (ray_packet.mask[j]) {
+            ray.pos.x = ray_packet.pos.x[j];
+            ray.pos.y = ray_packet.pos.y[j];
+            ray.pos.z = ray_packet.pos.z[j];
+            ray.dir.x = ray_packet.dir.x[j];
+            ray.dir.y = ray_packet.dir.y[j];
+            ray.dir.z = ray_packet.dir.z[j];
+
+            Intersection& i1 = destinations & (1 << j) ? intersections1[j] : intersections2[j];
+            Intersection& i2 = destinations & (1 << j) ? intersections2[j] : intersections1[j];
+            i2.hit = false;
+            Intersect(tree.prims[n.primitives[i]], ray, i2);
+            if (i2.hit && (i2.t < i1.t || !i1.hit)) {
+              destinations ^= (1 << j);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 template <unsigned int B, unsigned int L>
-Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const Ray& ray) {
+void Traverse(
+      const accel::BVH<accel::Triangle, B, L> &tree, 
+      int i, 
+      const Ray& ray, 
+      Intersection &inter) {
+
   typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = tree.nodes[i];
 
@@ -188,7 +275,19 @@ Intersection Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, cons
   Intersection* i2 = &intersections[1];
 
   InternalTraverse(tree, i, ray, &i1, &i2);
-  return *i1;
+  inter = *i1;
+}
+
+template <unsigned int B, unsigned int L, unsigned int R>
+void Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const RayPacket<R>& ray_packet, Intersection intersections[R]) {
+  typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
+  const node_t& n = tree.nodes[i];
+
+  assert(R <= sizeof(unsigned long long));
+  Intersection intersections2[R];
+  unsigned long long destinations = ~0;
+
+  InternalTraverse(tree, i, ray_packet, intersections, intersections2, destinations);
 }
 
 }

@@ -41,10 +41,9 @@ int main(int argc, char** argv) {
   std::cout << "Elapsed: " << std::chrono::duration <double, std::milli>(end - start).count() << "ms" << std::endl;
   std::cout << std::endl;
 
-
   rt::Camera<::Camera> camera;
-  camera.width = 800;
-  camera.height = 600;
+  camera.width = 1000;
+  camera.height = 1000;
   camera.fovy = 45 * 3.14159265358979 / 180;
 
   Bound bound;
@@ -63,10 +62,21 @@ int main(int argc, char** argv) {
 
   std::vector<Ray> rays = std::move(camera.GenerateRays(1));
 
+  #ifdef RAY_PACKETS
+  std::vector<RayPacket<4>> ray_packets((rays.size() + 3) / 4);
+  RaysToRayPackets(rays.data(), ray_packets.data(), rays.size());
+  
+  std::cout << ray_packets.size() << " ray packets" << std::endl;
+  #endif
+
   std::cout << "Tracing " << rays.size() << " rays" << std::endl;
   
   start = std::chrono::steady_clock::now();
+  #ifdef RAY_PACKETS
+  std::vector<Intersection> intersections = std::move(rtContext.trace(ray_packets));
+  #else
   std::vector<Intersection> intersections = std::move(rtContext.trace(rays));
+  #endif
   end = std::chrono::steady_clock::now();
   std::cout << "Elapsed: " << std::chrono::duration <double, std::milli>(end - start).count() << "ms" << std::endl;
   std::cout << std::endl;

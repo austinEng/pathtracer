@@ -9,10 +9,9 @@
 #include <core/util.h>
 #include <spatial_acceleration/primitive.h>
 
-Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2) {
+Intersection& TriangleIntersection(const Ray &ray, const glm::vec3 &p0, const glm::vec3 &p1, const glm::vec3 &p2, Intersection &inter) {
 
   // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-  Intersection inter;
 
   glm::vec3 e0 = p1 - p0;
   glm::vec3 e1 = p2 - p0;
@@ -34,18 +33,30 @@ Intersection TriangleIntersection(const Ray &ray, const glm::vec3 &p0, const glm
   return inter;
 }
 
-Intersection Intersect(const accel::Triangle &prim, const Ray &ray) {
-  return TriangleIntersection(ray, prim.positions[0], prim.positions[1], prim.positions[2]); 
+Intersection& Intersect(const accel::Triangle &prim, const Ray &ray, Intersection &inter) {
+  return TriangleIntersection(ray, prim.positions[0], prim.positions[1], prim.positions[2], inter); 
 }
 
 template <unsigned int N>
-Intersection Intersect(const accel::TriangleGroup<N> &prims, const Ray &ray) {
+Intersection& Intersect(const accel::TriangleGroup<N> &prims, const Ray &ray, Intersection &inter) {
   // [         p0's         ] [         p1's         ] [         p2's         ]
   // [  xs  ][  ys  ][  zs  ] 
   // [ xxxx ][ yyyy ][ zzzz ]
-  SIMD::Float<3*N> e0 = prims.positions[1].vals - prims.positions[0].vals;
-  SIMD::Float<3*N> e1 = prims.positions[2].vals - prims.positions[0].vals;
-  SIMD::Float<3*N> T;
+  SIMD::Float<3*N> scratch1;
+  SIMD::Float<3*N> scratch2;
+  SIMD::Float<3*N> scratch3;
+
+  SIMD::Float<3*N> &e0 = SIMD::SUBTRACT(prims.positions[1].vals, prims.positions[0].vals, scratch1);
+  SIMD::Float<3*N> &e1 = SIMD::SUBTRACT(prims.positions[2].vals, prims.positions[0].vals, scratch2);
+  SIMD::Float<3*N> &T = scratch3;
+
+  SIMD::Float<N> &scratch1_1 = *reinterpret_cast<SIMD::Float<N>*>(&scratch1);
+  SIMD::Float<N> &scratch1_2 = *reinterpret_cast<SIMD::Float<N>*>((char*)&scratch1 + sizeof(SIMD::Float<N>));
+  SIMD::Float<N> &scratch1_3 = *reinterpret_cast<SIMD::Float<N>*>((char*)&scratch1 + sizeof(SIMD::Float<2*N>));
+
+  SIMD::Float<N> &scratch3_1 = *reinterpret_cast<SIMD::Float<N>*>(&scratch3);
+  SIMD::Float<N> &scratch3_2 = *reinterpret_cast<SIMD::Float<N>*>((char*)&scratch3 + sizeof(SIMD::Float<N>));
+  SIMD::Float<N> &scratch3_3 = *reinterpret_cast<SIMD::Float<N>*>((char*)&scratch3 + sizeof(SIMD::Float<2*N>));
 
   #define X i
   #define Y i+N
@@ -68,29 +79,32 @@ Intersection Intersect(const accel::TriangleGroup<N> &prims, const Ray &ray) {
   }
 
   SIMD::Float<N> det;
-  SIMD::Float<N> denom;
-  SIMD::Float<N> u;
-  SIMD::Float<N> v;
 
   for (unsigned int i = 0; i < N; ++i) det[i] = e0[X] * P[X] + e0[Y] * P[Y] + e0[Z] * P[Z];
-  for (unsigned int i = 0; i < N; ++i) denom[i] = 1.f / det[i];
-  for (unsigned int i = 0; i < N; ++i) u[i] = T[X]*P[X] + T[Y]*P[Y] + T[Z]*P[Z];
-  u *= denom;
-  for (unsigned int i = 0; i < N; ++i) v[i] = Q[X]*ray.dir.x + Q[Y]*ray.dir.y + Q[Z]*ray.dir.z;
-  v *= denom;
+  
+  SIMD::Float<N> &denom = scratch1_1;
+  SIMD::Float<N> &u = scratch1_2;
+  SIMD::Float<N> &v = scratch1_3;
+  
+  SIMD::DIVIDE(1.f, det, denom);
 
-  SIMD::Float<N> t;
+  for (unsigned int i = 0; i < N; ++i) u[i] = T[X]*P[X] + T[Y]*P[Y] + T[Z]*P[Z];
+  SIMD::MULTIPLY(u, denom, u);
+
+  for (unsigned int i = 0; i < N; ++i) v[i] = Q[X]*ray.dir.x + Q[Y]*ray.dir.y + Q[Z]*ray.dir.z;
+  SIMD::MULTIPLY(v, denom, v);
+
+  SIMD::Float<N> &t = scratch3_1;
   for (unsigned int i = 0; i < N; ++i) t[i] = Q[X]*e1[X] + Q[Y]*e1[Y] + Q[Z]*e1[Z];
-  t *= denom;
+  SIMD::MULTIPLY(t, denom, t);
 
   #undef X
   #undef Y
   #undef Z
 
-  SIMD::Bool<N> hit;
+  SIMD::Float<N> &hit = scratch3_2;
   for (unsigned int i = 0; i < N; ++i) hit[i] = (u[i] >= 0 && u[i] < 1.f && v[i] >= 0 && u[i]+v[i] < 1.f && !fequal(0.f, det[i]));
 
-  Intersection inter;
   inter.t = std::numeric_limits<float>::max();
   for (unsigned int i = 0; i < N; ++i) {
     if (hit[i] && t[i] < inter.t && prims.mask[i]) {
@@ -118,11 +132,12 @@ class Intersectable<Polygon> :
     Intersection i1;
     Intersection i2;
     for (unsigned int c = 0; c < this->positions.size() - 2; ++c) {
-      i2 = TriangleIntersection(
+      TriangleIntersection(
         ray, 
         this->positions[c],
         this->positions[c+1],
-        this->positions[c+2]
+        this->positions[c+2],
+        i2
       );
       if (i2.hit && i2.t > 0 && (i2.t < i1.t || !i1.hit)) {
         std::swap(i1, i2);
@@ -146,11 +161,12 @@ class Intersectable<FixedPolygon<C>> :
     Intersection i1;
     Intersection i2;
     for (unsigned int c = 0; c < C - 2; ++c) {
-      i2 = TriangleIntersection(
+      TriangleIntersection(
         ray, 
         this->positions[c],
         this->positions[c+1],
-        this->positions[c+2]
+        this->positions[c+2],
+        i2
       );
       if (i2.hit && i2.t > 0 && (i2.t < i1.t || !i1.hit)) {
         std::swap(i1, i2);
@@ -171,7 +187,9 @@ class Intersectable<Triangle> :
   public:
   
   virtual Intersection GetIntersection(const Ray& ray) const {
-    return TriangleIntersection(ray, this->positions[0], this->positions[1], this->positions[2]);
+    Intersection inter;
+    TriangleIntersection(ray, this->positions[0], this->positions[1], this->positions[2], inter);
+    return inter;
   }
   
 };

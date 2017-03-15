@@ -28,10 +28,15 @@ set(LIB_DEST "include/${PROJECT_NAME}-${${PROJECT_NAME}_VERSION}/${CMAKE_BUILD_T
 set(GRAPHICS_LIBS_PREFIX "" CACHE PATH "Path to installation of graphics libs")
 
 option(GROUP_ACCELERATION_NODES "Group acceleration tree nodes for faster traversal" ON)
+option(RAY_PACKETS "Group rays for faster traversal" ON)
 option(PAD_BOUNDS "Pad bounding boxes for faster 4-wide SIMD operations" ON)
 
 if (GROUP_ACCELERATION_NODES)
 add_definitions(-DGROUP_ACCELERATION_NODES)
+endif()
+
+if (RAY_PACKETS)
+add_definitions(-DRAY_PACKETS)
 endif()
 
 if (PAD_BOUNDS)
