@@ -1,9 +1,12 @@
 
 #pragma once
 
-#include <spatial_acceleration/bvh_tree.h>
+#include <stack>
+#include <glm/glm.hpp>
 #include <ae_core/simd/types.h>
-
+#include <spatial_acceleration/bvh_tree.h>
+#include <intersection/bound.h>
+/*
 namespace rt {
 
 float IntersectBound(const Bound &bound, const Ray &ray) {
@@ -91,6 +94,11 @@ SIMD::Float<N>& IntersectBoundGroup(const BoundGroup<N> &bound, const Ray &ray, 
   for (unsigned int i = 0; i < N; ++i) tn[i] = (tn[i] > tf[i] ? -1.f : tn[i]);
 
   return SIMD::MULTIPLY(tn, mask, out);
+}
+
+template <unsigned int R>
+SIMD::Float<R>& IntersectBound(const Bound &bound, const RayPacket<R> &ray_packet, SIMD::Float<R>& out) {
+  return out;
 }
 
 #if GROUP_ACCELERATION_NODES
@@ -202,27 +210,30 @@ void InternalTraverse(
   typedef typename accel::TreeBase<accel::Triangle, B, L, accel::BVH<accel::Triangle, B, L>>::node_t node_t;
   const node_t& n = tree.nodes[i];
 
+  SIMD::Float<B> t;
+  IntersectBound(tree.nodes[i].bound, ray_packet, t);
+
   if (!n.isLeaf) {
-    std::pair<float, int> ts[B];
-    for (unsigned int i = 0; i < B; ++i) {
-      int idx = n.children[i];
-      if (idx >= 0) {
-        SIMD::Float<R> t;// = IntersectBound(tree.nodes[idx].bound, ray_packet);
-        unsigned int j = 0;
-        while (j < R) {
-          if (t[j] >= 0.f) break;
-          j++;
-        }
-        if (j == R) {
-          ts[i] = std::make_pair(-1.f, idx);
-        } else {
-          ts[i] = std::make_pair(t[j], idx);
-        }
-      } else {
-        ts[i] = std::make_pair(-1.f, idx);
-      }
-    }
-    std::sort(std::begin(ts), std::end(ts));
+    // std::pair<float, int> ts[B];
+    // for (unsigned int i = 0; i < B; ++i) {
+    //   int idx = n.children[i];
+    //   if (idx >= 0) {
+    //     SIMD::Float<R> t;
+    //     unsigned int j = 0;
+    //     while (j < R) {
+    //       if (t[j] >= 0.f) break;
+    //       j++;
+    //     }
+    //     if (j == R) {
+    //       ts[i] = std::make_pair(-1.f, idx);
+    //     } else {
+    //       ts[i] = std::make_pair(t[j], idx);
+    //     }
+    //   } else {
+    //     ts[i] = std::make_pair(-1.f, idx);
+    //   }
+    // }
+    // std::sort(std::begin(ts), std::end(ts));
 
     // for (unsigned int i = 0; i < B; ++i) {
     //   if (ts[i].first >=0 && (ts[i].first < (*i1)->t || !(*i1)->hit)) {
@@ -234,26 +245,26 @@ void InternalTraverse(
     // }
 
   } else {
-    Ray ray;
+    // Ray ray;
     for (unsigned int i = 0; i < L; ++i) {
       if (n.primitives[i] != -1) {
         for (unsigned int j = 0; j < R; ++j) {
-          if (ray_packet.mask[j]) {
-            ray.pos.x = ray_packet.pos.x[j];
-            ray.pos.y = ray_packet.pos.y[j];
-            ray.pos.z = ray_packet.pos.z[j];
-            ray.dir.x = ray_packet.dir.x[j];
-            ray.dir.y = ray_packet.dir.y[j];
-            ray.dir.z = ray_packet.dir.z[j];
+          // if (ray_packet.mask[j]) {
+          //   ray.pos.x = ray_packet.pos.x[j];
+          //   ray.pos.y = ray_packet.pos.y[j];
+          //   ray.pos.z = ray_packet.pos.z[j];
+          //   ray.dir.x = ray_packet.dir.x[j];
+          //   ray.dir.y = ray_packet.dir.y[j];
+          //   ray.dir.z = ray_packet.dir.z[j];
 
-            Intersection& i1 = destinations & (1 << j) ? intersections1[j] : intersections2[j];
-            Intersection& i2 = destinations & (1 << j) ? intersections2[j] : intersections1[j];
-            i2.hit = false;
-            Intersect(tree.prims[n.primitives[i]], ray, i2);
-            if (i2.hit && (i2.t < i1.t || !i1.hit)) {
-              destinations ^= (1 << j);
-            }
-          }
+          //   Intersection& i1 = destinations & (1 << j) ? intersections1[j] : intersections2[j];
+          //   Intersection& i2 = destinations & (1 << j) ? intersections2[j] : intersections1[j];
+          //   i2.hit = false;
+          //   Intersect(tree.prims[n.primitives[i]], ray, i2);
+          //   if (i2.hit && (i2.t < i1.t || !i1.hit)) {
+          //     destinations ^= (1 << j);
+          //   }
+          // }
         }
       }
     }
@@ -288,6 +299,68 @@ void Traverse(const accel::BVH<accel::Triangle, B, L> &tree, int i, const RayPac
   unsigned long long destinations = ~0;
 
   InternalTraverse(tree, i, ray_packet, intersections, intersections2, destinations);
+}
+
+}
+*/
+
+namespace rt {
+
+using namespace accel;
+
+template <typename Primitive, typename Branch, unsigned int N, typename PrimitiveStorage>
+void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveStorage>> &tree, const Ray& ray, Intersection &inter) {
+
+  // typedef typename accel::TreeBase<Primitive, Branch, Storage, accel::BVH<Primitive, Branch, Storage>>::node_storage_t node_t;
+  // Intersection intersections[2];
+  // Intersection* i1 = &intersections[0];
+  // Intersection* i2 = &intersections[1];
+
+  // InternalTraverse(tree, 0, ray, &i1, &i2);
+  // inter = *i1;
+  std::stack<unsigned int> stack;
+  stack.push(0);
+  while (!stack.empty()) {
+    const auto* node = &tree.nodes[stack.top()];
+    stack.pop();
+
+    if (node->isLeaf.any()) {
+      for (unsigned int i = 0; i < N; ++i) {
+        if (node->isLeaf[i]) {
+          // Intersect(tree.prims[node.primitives[i]], ray, inter);
+        }
+      }
+    }
+
+    if (!node->isLeaf.all()) {
+      std::bitset<N> mask = Hit(node->bound, ray);
+
+      unsigned int hits = 0;
+      unsigned int first;
+      for (unsigned int i = 0; i < N; ++i) {
+        if (mask[i] && (hits++) == 0) first = i; 
+      }
+
+      if (hits == 1) {
+        node = &tree.nodes[node->children[first]];
+        continue;
+      } else if (hits > 0) {
+        // sort by distance
+        std::pair<float, unsigned int> ts[hits];
+        SIMD::Float<N> t = DistanceTo(node->bound, ray);
+
+        unsigned int j = 0;
+        for (unsigned int i = 0; i < N; ++i) {
+          if (mask[i]) ts[j++] = std::make_pair(t[i], i);
+        }
+        std::sort(ts, ts + hits);
+
+        for (unsigned int i = 0; i < hits; ++i) {
+          stack.push(node->children[ts[i].second]);
+        }
+      }
+    }
+  }
 }
 
 }

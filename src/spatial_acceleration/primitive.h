@@ -1,18 +1,50 @@
 
 #pragma once 
 
+#include <assert.h>
+#include <bitset>
 #include <glm/vec4.hpp>
 #include <ae_core/simd/types.h>
-#include <assert.h>
 #include "bound.h"
 
 namespace accel {
 
-class Triangle;
+class Triangle {
+  public:
+
+  glm::vec3 positions[3]; // counter-clockwise winding order
+
+  Triangle(const Polygon &poly) {
+    for (unsigned int i = 0; i < 3; ++i) {
+      positions[i] = poly.positions[i];
+    }
+  }
+
+  Bound getBound() const {
+    Bound bound;
+    for (unsigned int i = 0; i < 3; ++i) {
+      bound.merge(positions[i]);
+    }
+    return bound;
+  }
+
+  glm::vec3 getCentroid() const {
+    glm::vec3 centroid;
+    for (unsigned int i = 0; i < 3; ++i) {
+      centroid += positions[i];
+    }
+    centroid /= 3;
+    return centroid;
+  }
+
+};
+
 template <unsigned int N>
 class TriangleGroup {
   public:
   
+  static const int count = N;
+
   union {
     float vals[3*3*N];
     struct {
@@ -26,48 +58,22 @@ class TriangleGroup {
       };
     } positions[3];
   };
-  SIMD::Float<N> mask;
 
-  TriangleGroup() {
+  std::bitset<N> mask;
+
+  TriangleGroup(const Triangle* triangles[N]) {
     for (unsigned int i = 0; i < N; ++i) {
-      mask[i] = 0.f;
+      mask.set(i, triangles[i] != nullptr);
+      if (triangles[i] != nullptr) { 
+        for (unsigned int j = 0; j < 3; ++j) {
+          positions[j].xs[i] = triangles[i]->positions[j].x;
+          positions[j].ys[i] = triangles[i]->positions[j].y;
+          positions[j].zs[i] = triangles[i]->positions[j].z;
+        }
+      }
     }
   }
 
-  void setPrimitive(unsigned int idx, const accel::Triangle &tri);
 };
-
-class Triangle {
-  public:
-
-  template <unsigned int N>
-  struct group {
-    typedef TriangleGroup<N> type;
-  };
-
-  glm::vec3 positions[3]; // counter-clockwise winding order
-  glm::vec3 centroid;
-  Bound bound;
-
-  Triangle(const Polygon &poly) {
-    unsigned int n = poly.positions.size();
-    assert(n == 3);
-    for (unsigned int i = 0; i < 3; ++i) {
-      positions[i] = poly.positions[i];
-      centroid += positions[i] / (float)n;
-      bound.merge(positions[i]);
-    }
-  }
-};
-
-template <unsigned int N>
-void TriangleGroup<N>::setPrimitive(unsigned int idx, const accel::Triangle &tri) {
-  for (unsigned int i = 0; i < 3; ++i) {
-    positions[i].xs[idx] = tri.positions[i].x;
-    positions[i].ys[idx] = tri.positions[i].y;
-    positions[i].zs[idx] = tri.positions[i].z;
-  }
-  mask[idx] = 1.f;
-}
 
 }

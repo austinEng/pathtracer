@@ -3,6 +3,7 @@
 
 #include <glm/vec3.hpp>
 #include <ae_core/simd/types.h>
+#include <bitset>
 
 struct Ray {
   glm::vec3 pos;
@@ -27,7 +28,7 @@ struct RayPacket {
   };
   pos_t pos;
   dir_t dir;
-  SIMD::Float<N> mask;
+  std::bitset<N> mask;
 };
 
 template <unsigned int N>
@@ -37,7 +38,7 @@ static void RaysToRayPackets(const Ray* const rays, RayPacket<N>* const packets,
       unsigned int ray_index = i + j;
       unsigned int packet_index = i / N;
       float valid = ray_index < count;
-      packets[packet_index].mask[j] = valid;
+      packets[packet_index].mask.set(j, valid);
       if (valid) {
         packets[packet_index].pos.x[j] = rays[ray_index].pos.x;
         packets[packet_index].pos.y[j] = rays[ray_index].pos.y;

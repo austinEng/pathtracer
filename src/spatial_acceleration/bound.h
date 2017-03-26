@@ -7,6 +7,8 @@
 #include <glm/vec4.hpp>
 #include <ae_core/simd/types.h>
 
+namespace accel {
+
 class Bound {
 #ifdef PAD_BOUNDS
 #define N 4
@@ -211,3 +213,5 @@ std::ostream& operator<<(std::ostream& os, const BoundGroup<N>& b) {
   }
   return os;  
 }  
+
+}

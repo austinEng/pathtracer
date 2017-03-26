@@ -1,19 +1,29 @@
 
-template <typename P, unsigned int B, unsigned int L>
-typename BVH<P,B,L>::node_t* BVH<P,B,L>::InternalBuild(std::vector<P> &prims, node_t* arena, int &nodeCount) {
-  this->nodeCount = 1;
+template <typename Primitive, typename Branch, typename Storage>
+typename BVH<Primitive, Branch, Storage>::node_t* BVH<Primitive, Branch, Storage>::InternalBuild(std::vector<Primitive> &prims, node_t* arena, int &nodeCount) {
 
-  node_t* root = new(arena++) node_t();
-  root->isLeaf = false;
-  node_t* subroot = recbuild(prims, 0, prims.size(), &arena);
-  root->children[0] = subroot;  // root cannot be a leaf;
+  std::vector<PrimitiveInfo> primitiveInfo(prims.begin(), prims.end());
+  for (unsigned int i = 0; i < primitiveInfo.size(); ++i) {
+    primitiveInfo[i].index = i;
+  }
+
+  node_t* root = recbuild(primitiveInfo.data(), 0, prims.size(), &arena);
   nodeCount = this->nodeCount;
+  
+  // Shuffle primitives. Primitive info has been sorted but primitives have not
+  for (unsigned int i = 0; i < primitiveInfo.size(); ++i) {
+    unsigned int index = primitiveInfo[i].index;
+    if (index != i) {
+      std::swap(primitiveInfo[i], primitiveInfo[index]);
+      std::swap(prims[i], prims[index]);
+    }
+  }
 
   return root;
 }
 
-template <typename P, unsigned int B, unsigned int L>
-void BVH<P,B,L>::partition(std::vector<P> &prims, unsigned int begin_, unsigned int end_, unsigned int partitions[2*B]) {
+template <typename Primitive, typename Branch, typename Storage>
+void BVH<Primitive, Branch, Storage>::partition(PrimitiveInfo* prims, unsigned int begin_, unsigned int end_, unsigned int partitions[2*Branch::NODE]) {
   unsigned int count = 0;
   unsigned int begin = begin_;
   unsigned int end = end_;
@@ -74,18 +84,18 @@ void BVH<P,B,L>::partition(std::vector<P> &prims, unsigned int begin_, unsigned 
       split = (float)(binSplit + 1) / config.binCount * epsilon * centroidBound.extent(axis) + centroidBound.min(axis);
     }
 
-    P* ptr;
+    PrimitiveInfo* ptr;
     if (!empty) {
-      ptr = std::partition(&prims[begin], &prims[end], [&split, &axis](const P &prim) {
+      ptr = std::partition(&prims[begin], &prims[end], [&split, &axis](const PrimitiveInfo &prim) {
         return prim.centroid[axis] < split;
       });
     } else {
-      ptr = std::partition(&prims[begin], &prims[end], [&begin, &end, &prims](const P &prim) {
+      ptr = std::partition(&prims[begin], &prims[end], [&begin, &end, &prims](const PrimitiveInfo &prim) {
         return (&prim - &prims[begin]) < (&prims[end] - &prims[begin] + 1) / 2;
       });
     }
 
-    unsigned int mid = ptr - prims.data();
+    unsigned int mid = ptr - prims;
 
     if (costs[2*(binSplit)] < costs[2*(binSplit) + 1]) {
       partitions[2*count] = begin;
@@ -107,19 +117,20 @@ void BVH<P,B,L>::partition(std::vector<P> &prims, unsigned int begin_, unsigned 
 
     count += 1;
 
-  } while (count < B - 1);
+  } while (count < Branch::NODE - 1);
 }
 
-template <typename P, unsigned int B, unsigned int L>
-typename BVH<P,B,L>::node_t* BVH<P,B,L>::recbuild(std::vector<P> &prims, unsigned int begin, unsigned int end, node_t** arena) {
-  this->nodeCount++;
+template <typename Primitive, typename Branch, typename Storage>
+typename BVH<Primitive, Branch, Storage>::node_t* BVH<Primitive, Branch, Storage>::recbuild(PrimitiveInfo* prims, unsigned int begin, unsigned int end, node_t** arena) {
   if (end - begin == 0) return nullptr;
-  if (end - begin <= L) {
 
+  this->nodeCount++;
+
+  if (end - begin <= Branch::LEAF) {
     node_t* node = new((*arena)++) node_t();
     node->isLeaf = true;
 
-    for (unsigned int i = 0; i < L; ++i) {
+    for (unsigned int i = 0; i < Branch::LEAF; ++i) {
       if (begin + i < end) {
         node->primitives[i] = begin + i;
         node->bound.merge(prims[begin+i].bound);
@@ -128,20 +139,19 @@ typename BVH<P,B,L>::node_t* BVH<P,B,L>::recbuild(std::vector<P> &prims, unsigne
       }
     }
     return node;
-  }
+  } else {
+    unsigned int partitions[2*Branch::NODE];
+    partition(prims, begin, end, partitions);
 
-  unsigned int partitions[2*B];
-  partition(prims, begin, end, partitions);
+    node_t* node = new((*arena)++) node_t();
+    node->isLeaf = false;
 
-  node_t* node = new((*arena)++) node_t();
-  node->isLeaf = false;
-
-  for (unsigned int i = 0; i < B; ++i) {
-    node->children[i] = recbuild(prims, partitions[2*i], partitions[2*i+1], arena);
-    if (node->children[i] != nullptr) {
-      node->bound.merge(node->children[i]->bound);
+    for (unsigned int i = 0; i < Branch::NODE; ++i) {
+      node->children[i] = recbuild(prims, partitions[2*i], partitions[2*i+1], arena);
+      if (node->children[i] != nullptr) {
+        node->bound.merge(node->children[i]->bound);
+      }
     }
+    return node;
   }
-
-  return node;
 }

@@ -5,8 +5,19 @@
 
 namespace accel {
 
-template <typename P, unsigned int B, unsigned int L>
-class BVH : public TreeBase<P, B, L, BVH<P, B, L>> {
+template <typename Primitive, typename Branch, typename Storage>
+class BVH : public TreeBase<Primitive, Branch, Storage, BVH<Primitive, Branch, Storage>> {
+
+  class PrimitiveInfo {
+  public:
+    Bound bound;
+    glm::vec3 centroid;
+    unsigned int index;
+
+    explicit PrimitiveInfo(const Primitive &primitive) : 
+      bound(primitive.getBound()), 
+      centroid(primitive.getCentroid()) { }
+  };
 
   public:
 
@@ -20,17 +31,16 @@ class BVH : public TreeBase<P, B, L, BVH<P, B, L>> {
     unsigned int binCount = 12;
   };
 
-  typedef typename TreeBase<P, B, L, BVH<P, B, L>>::build_t node_t;
-  typedef P prim_t;
+  typedef typename TreeBase<Primitive, Branch, Storage, BVH<Primitive, Branch, Storage>>::build_t node_t;
 
-  node_t* InternalBuild(std::vector<P> &prims, node_t* arena, int &nodeCount);
+  node_t* InternalBuild(std::vector<Primitive> &prims, node_t* arena, int &nodeCount);
 
   private:
   int nodeCount;
   Config config;
 
-  void partition(std::vector<P> &prims, unsigned int begin, unsigned int end, unsigned int partitions[2*B]);
-  node_t* recbuild(std::vector<P> &prims, unsigned int begin, unsigned int end, node_t** arena);
+  void partition(PrimitiveInfo* prims, unsigned int begin, unsigned int end, unsigned int partitions[2*Branch::NODE]);
+  node_t* recbuild(PrimitiveInfo* prims, unsigned int begin, unsigned int end, node_t** arena);
 
 };
 

@@ -5,7 +5,7 @@
 
 #include <chrono>
 #include <geometry/polygon.h>
-#include <intersection/geometry.h>
+// #include <intersection/geometry.h>
 #include <spatial_acceleration/geometry.h>
 #include <importers/obj_loader.h>
 #include <spatial_acceleration/bound.h>
@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
   camera.height = 1000;
   camera.fovy = 45 * 3.14159265358979 / 180;
 
-  Bound bound;
+  accel::Bound bound;
   for (const Polygon& poly : polygons) {
     for (const glm::vec3 &p : poly.positions) {
       bound.merge(p);
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   ) / 2.f;
   camera.eye = camera.tgt + glm::vec3(0,0,1) * bound.extent(1) / 2.f / std::atan(camera.fovy / 2.f);
 
-  std::vector<Ray> rays = std::move(camera.GenerateRays(1));
+  std::vector<Ray> rays = camera.GenerateRays(1);
 
   #ifdef RAY_PACKETS
   std::vector<RayPacket<4>> ray_packets((rays.size() + 3) / 4);
@@ -73,9 +73,9 @@ int main(int argc, char** argv) {
   
   start = std::chrono::steady_clock::now();
   #ifdef RAY_PACKETS
-  std::vector<Intersection> intersections = std::move(rtContext.trace(ray_packets));
+  std::vector<Intersection> intersections = rtContext.trace(ray_packets);
   #else
-  std::vector<Intersection> intersections = std::move(rtContext.trace(rays));
+  std::vector<Intersection> intersections = rtContext.trace(rays);
   #endif
   end = std::chrono::steady_clock::now();
   std::cout << "Elapsed: " << std::chrono::duration <double, std::milli>(end - start).count() << "ms" << std::endl;
