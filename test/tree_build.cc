@@ -8,7 +8,7 @@
 #include <spatial_acceleration/bound.h>
 #include <spatial_acceleration/node.h>
 #include <spatial_acceleration/bvh_tree.h>
-#include <spatial_acceleration/primitive.h>
+#include <spatial_acceleration/triangle.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {

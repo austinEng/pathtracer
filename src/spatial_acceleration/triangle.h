@@ -3,7 +3,7 @@
 
 #include <assert.h>
 #include <bitset>
-#include <glm/vec4.hpp>
+#include <glm/vec3.hpp>
 #include <ae_core/simd/types.h>
 #include "bound.h"
 

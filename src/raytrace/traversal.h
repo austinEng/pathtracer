@@ -6,6 +6,7 @@
 #include <ae_core/simd/types.h>
 #include <spatial_acceleration/bvh_tree.h>
 #include <intersection/bound.h>
+#include <intersection/triangle.h>
 /*
 namespace rt {
 
@@ -310,14 +311,12 @@ using namespace accel;
 
 template <typename Primitive, typename Branch, unsigned int N, typename PrimitiveStorage>
 void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveStorage>> &tree, const Ray& ray, Intersection &inter) {
+  
+  std::bitset<N> hit_mask;
+  SIMD::Float<N> t;
+  unsigned int hits, first, i, j;
+  std::pair<float, unsigned int> ts[N];
 
-  // typedef typename accel::TreeBase<Primitive, Branch, Storage, accel::BVH<Primitive, Branch, Storage>>::node_storage_t node_t;
-  // Intersection intersections[2];
-  // Intersection* i1 = &intersections[0];
-  // Intersection* i2 = &intersections[1];
-
-  // InternalTraverse(tree, 0, ray, &i1, &i2);
-  // inter = *i1;
   std::stack<unsigned int> stack;
   stack.push(0);
   while (!stack.empty()) {
@@ -325,37 +324,32 @@ void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveSt
     stack.pop();
 
     if (node->isLeaf.any()) {
-      for (unsigned int i = 0; i < N; ++i) {
+      for (i = 0; i < N; ++i) {
         if (node->isLeaf[i]) {
-          // Intersect(tree.prims[node.primitives[i]], ray, inter);
+          Intersect(tree.prims[node->primitives[i]], ray, inter);
         }
       }
     }
 
     if (!node->isLeaf.all()) {
-      std::bitset<N> mask = Hit(node->bound, ray);
+      hit_mask = node->isLeaf;
+      hit_mask.flip();
+      DistanceTo<N>(node->bound, ray, t, hit_mask);
 
-      unsigned int hits = 0;
-      unsigned int first;
-      for (unsigned int i = 0; i < N; ++i) {
-        if (mask[i] && (hits++) == 0) first = i; 
+      for (i = 0, hits = 0; i < N; ++i) {
+        if (hit_mask[i] && (hits++) == 0) first = i; 
       }
 
       if (hits == 1) {
         node = &tree.nodes[node->children[first]];
         continue;
       } else if (hits > 0) {
-        // sort by distance
-        std::pair<float, unsigned int> ts[hits];
-        SIMD::Float<N> t = DistanceTo(node->bound, ray);
-
-        unsigned int j = 0;
-        for (unsigned int i = 0; i < N; ++i) {
-          if (mask[i]) ts[j++] = std::make_pair(t[i], i);
+        for (i = 0, j = 0; i < N; ++i) {
+          if (hit_mask[i]) ts[j++] = std::make_pair(t[i], i);
         }
         std::sort(ts, ts + hits);
 
-        for (unsigned int i = 0; i < hits; ++i) {
+        for (i = 0; i < hits; ++i) {
           stack.push(node->children[ts[i].second]);
         }
       }

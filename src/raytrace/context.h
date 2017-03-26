@@ -2,7 +2,7 @@
 #pragma once
 
 #include <spatial_acceleration/bvh_tree.h>
-#include <spatial_acceleration/primitive.h>
+#include <spatial_acceleration/triangle.h>
 #include <intersection/ray.h>
 #include <intersection/intersection.h>
 #include "traversal.h"
