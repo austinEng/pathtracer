@@ -15,6 +15,8 @@ add_executable(depth_trace depth_trace.cc)
 target_link_libraries(depth_trace 
   ae_graphics 
   tinyobjloader 
+  png
+  z
   IlmImf-2_2)
 
 add_test(

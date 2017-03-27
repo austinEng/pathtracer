@@ -5,7 +5,6 @@
 
 #include <chrono>
 #include <geometry/polygon.h>
-// #include <intersection/geometry.h>
 #include <spatial_acceleration/geometry.h>
 #include <importers/obj_loader.h>
 #include <spatial_acceleration/bound.h>
@@ -13,10 +12,7 @@
 #include <raytrace/context.h>
 #include <raytrace/camera.h>
 
-#include <OpenEXR/ImfHeader.h>
-#include <OpenEXR/ImfChannelList.h>
-#include <OpenEXR/ImfPixelType.h>
-#include <OpenEXR/ImfOutputFile.h>
+#include <png/png.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -101,27 +97,58 @@ int main(int argc, char** argv) {
     }
   }
 
-  Imf::Header header(camera.width, camera.height);
-  header.channels().insert ("Z", Imf::Channel(Imf::FLOAT));
+  png_structp png_ptr;
+  png_infop info_ptr;
 
-  std::string fname = std::string(argv[1]) + ".exr";
-  Imf::OutputFile file(fname.c_str(), header); 
+  std::string file_name = std::string(argv[1]) + ".png";
 
-  Imf::FrameBuffer frameBuffer; 
-  frameBuffer.insert("Z",          // name
-    Imf::Slice(Imf::FLOAT,         // type
-    (char*)depths.data(),          // base
-    sizeof(float)*1,               // xStride
-    sizeof(float)*camera.width));  // yStride
+  FILE *fp = fopen(file_name.c_str(), "wb");
+  if (!fp) exit(1);
+  
+  png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+  if (!png_ptr) {
+    std::cerr << "png_create_write_struct failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-  file.setFrameBuffer(frameBuffer);
-  file.writePixels(camera.height);
+  info_ptr = png_create_info_struct(png_ptr);
+  if (!info_ptr) {
+    std::cerr << "png_create_info_struct failed" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
-  // pid_t pid = fork();
-  // if (pid == 0) {
-  //   std::string command = std::string(EXRDISPLAY_PATH " -c Z -n -u ");
-  //   command.insert(command.size(), fname);
-  //   exit(system(command.c_str()));
-  // }
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    std::cerr << "Error during init_io" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  png_init_io(png_ptr, fp);
+  
+  if (setjmp(png_jmpbuf(png_ptr))) {
+    std::cerr << "Error during writing header" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  png_set_IHDR(png_ptr, info_ptr, camera.width, camera.height,
+                16, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE,
+                PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+
+  png_write_info(png_ptr, info_ptr);
+
+  png_bytep row = (png_bytep) malloc(2 * camera.width * sizeof(png_byte));
+  for (unsigned int y = 0; y < camera.height; y++) {
+    for (unsigned int x = 0; x < camera.width; x++) {
+      row[x*2] = (int) (255 * depths[y * camera.width + x]);
+    }
+    png_write_row(png_ptr, row);
+  }
+
+  png_write_end(png_ptr, NULL);
+
+  fclose(fp);
+  if (info_ptr != NULL) png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+  if (png_ptr != NULL) png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+  if (row != NULL) free(row);
+  
   exit(0);
 }
