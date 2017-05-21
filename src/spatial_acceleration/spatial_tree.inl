@@ -55,7 +55,7 @@ void TreeBase<Primitive, Branch, Storage, Tree>::flatten(build_t* root, const st
       if (group->nodes[i] != nullptr) {
         if (!group->nodes[i]->isLeaf) {
           for (unsigned int j = 0; j < Branch::NODE; ++j) {
-            current->children[i] = idx++;
+            // current->groups[i].children[i % Storage::node_t::branch_node] = idx++;
             build_grp* grp = new build_grp();
             for (unsigned int k = 0; k < Storage::node_t::count && j < Branch::NODE; ++j, ++k) {
               grp->nodes[k] = group->nodes[i]->children[j];
@@ -66,12 +66,13 @@ void TreeBase<Primitive, Branch, Storage, Tree>::flatten(build_t* root, const st
           }
         } else {
           for (unsigned int j = 0; j < Branch::LEAF; ++j) {
-            current->primitives[i] = pidx++;
+            // current->groups[i].primitives[i % Storage::node_t::branch_node] = pidx++;
             prim_grp* grp = new prim_grp();
             for (unsigned int k = 0; k < Storage::node_t::count && j < Branch::NODE; ++j, ++k) {
               grp->prims[k] = &primitives[group->nodes[i]->primitives[j]];
             }
             this->prims.emplace_back(grp->prims);
+            delete grp;
           }
         }
       }

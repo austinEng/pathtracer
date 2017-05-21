@@ -16,8 +16,7 @@ target_link_libraries(depth_trace
   ae_graphics 
   tinyobjloader 
   png
-  z
-  IlmImf-2_2)
+  z)
 
 add_test(
   NAME load_square_obj
@@ -49,17 +48,17 @@ add_test(
   COMMAND build/test/tree_build objs/dragon.obj 
   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-add_test(
-  NAME depth_trace_square 
-  COMMAND build/test/depth_trace objs/square.obj 
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+# add_test(
+#   NAME depth_trace_square 
+#   COMMAND build/test/depth_trace objs/square.obj 
+#   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-add_test(
-  NAME depth_trace_bunny 
-  COMMAND build/test/depth_trace objs/bunny.obj 
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+# add_test(
+#   NAME depth_trace_bunny 
+#   COMMAND build/test/depth_trace objs/bunny.obj 
+#   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-add_test(
-  NAME depth_trace_dragon 
-  COMMAND build/test/depth_trace objs/dragon.obj 
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+# add_test(
+#   NAME depth_trace_dragon 
+#   COMMAND build/test/depth_trace objs/dragon.obj 
+#   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

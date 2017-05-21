@@ -13,18 +13,10 @@ class Context {
 
   public:
   
-  // typedef accel::BranchingFactor<4, 4> Branch;
-  // typedef accel::NodeGroup<Branch> NodeStorage;
-  // typedef accel::TriangleGroup<4> TriangleStorage;
-  // typedef accel::NodeStorage<NodeStorage, TriangleStorage> Storage;
-  
   accel::BVH<
-    accel::Triangle, 
-    accel::BranchingFactor<4, 4>, 
-    accel::NodeStorage<
-      accel::NodeGroup<4>, 
-      accel::TriangleGroup<4>
-    >
+    accel::Triangle, // primitive type
+    accel::BranchingFactor<4, 4>, // branching factor
+    accel::BranchingFactor<4, 1> // storage
   > bvhTree;
 
   void initialize(std::vector<Polygon> &polygons) {

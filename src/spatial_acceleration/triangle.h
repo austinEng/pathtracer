@@ -41,8 +41,7 @@ class Triangle {
 
 template <unsigned int N>
 class TriangleGroup {
-  public:
-  
+public:
   static const int count = N;
 
   union {

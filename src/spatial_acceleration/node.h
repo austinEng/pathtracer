@@ -51,40 +51,62 @@ public:
 //   Node(const BuildNode<Branch> &node);
 // };
 
+// count = (Branch + N - 1) / N
+
+
 template <unsigned int N>
-class alignas(64) NodeGroup {
+class NodeGroup {
 public:
   static const int count = N;
-  BoundGroup<N> bound;
-  union {
-    SIMD::Int<N> children;    // indices of child nodes
-    SIMD::Int<N> primitives;  // indices of each primitive group
-  };
-  std::bitset<N> isLeaf;
 
-  NodeGroup();
+  template <typename Branch>
+  class alignas(64) NodeGroupImpl {
+    public:
+    
+    BoundGroup<N> bound;
+    // union {
+    //   SIMD::Int<branch_node> children_groups[N];    
+    //   SIMD::Int<branch_node*N> children; // indices of child nodes
+    //   SIMD::Int<branch_leaf> primitive_groups[N];
+    //   SIMD::Int<branch_leaf*N> primitives;
+    // };
+    struct {
+      union {
+        SIMD::Int<Branch::NODE> children;
+        SIMD::Int<Branch::LEAF> primitives;
+      };
+    } groups[N];
+    
 
-  template <unsigned int L>
-  NodeGroup(BuildNode<accel::BranchingFactor<N, L>>* nodes[N]) {
-    for (unsigned int i = 0; i < N; ++i) {
-      if (nodes[i] != nullptr) {
-        bound.minX(i) = nodes[i]->bound.min(0);
-        bound.minY(i) = nodes[i]->bound.min(1);
-        bound.minZ(i) = nodes[i]->bound.min(2);
-        bound.maxX(i) = nodes[i]->bound.max(0);
-        bound.maxY(i) = nodes[i]->bound.max(1);
-        bound.maxZ(i) = nodes[i]->bound.max(2);
+    std::bitset<N> isLeaf;
+
+    NodeGroupImpl();
+
+    template <unsigned int L>
+    NodeGroupImpl(BuildNode<accel::BranchingFactor<N, L>>* nodes[N]) {
+      for (unsigned int i = 0; i < N; ++i) {
+        if (nodes[i] != nullptr) {
+          bound.minX(i) = nodes[i]->bound.min(0);
+          bound.minY(i) = nodes[i]->bound.min(1);
+          bound.minZ(i) = nodes[i]->bound.min(2);
+          bound.maxX(i) = nodes[i]->bound.max(0);
+          bound.maxY(i) = nodes[i]->bound.max(1);
+          bound.maxZ(i) = nodes[i]->bound.max(2);
+        }
+      }
+
+      for (unsigned int i = 0; i < N; ++i) {
+        isLeaf.set(i, nodes[i] != nullptr && nodes[i]->isLeaf);
+      }
+
+      for (unsigned int i = 0; i < N; ++i) {
+        groups[i].children = -1;
       }
     }
-
-    for (unsigned int i = 0; i < N; ++i) {
-      isLeaf.set(i, nodes[i] != nullptr && nodes[i]->isLeaf);
-    }
-
-    children = -1;
-  }
+  };
+  
+  template <typename Branch>
+  using Impl = NodeGroupImpl<Branch>;
 };
-
-using Node = NodeGroup<1>;
 
 }

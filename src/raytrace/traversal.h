@@ -309,9 +309,10 @@ namespace rt {
 
 using namespace accel;
 
-template <typename Primitive, typename Branch, unsigned int N, typename PrimitiveStorage>
-void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveStorage>> &tree, const Ray& ray, Intersection &inter) {
-  
+template <typename Primitive, typename Branch, typename StorageBranch, typename PrimitiveStorage>
+void Traverse(const BVH<Primitive, Branch, StorageBranch> &tree, const Ray& ray, Intersection &inter) {
+  const unsigned int N = StorageBranch::node_t::count;
+
   std::bitset<N> hit_mask;
   SIMD::Float<N> t;
   unsigned int hits, first, i, j;
@@ -326,7 +327,10 @@ void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveSt
     if (node->isLeaf.any()) {
       for (i = 0; i < N; ++i) {
         if (node->isLeaf[i]) {
-          Intersect(tree.prims[node->primitives[i]], ray, inter);
+          for (j = 0; j < Branch::LEAF; ++j) {
+            std::cout << i << ", " << j << std::endl;
+            Intersect(tree.prims[node->groups[i].primitives[j]], ray, inter);
+          }
         }
       }
     }
@@ -334,14 +338,21 @@ void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveSt
     if (!node->isLeaf.all()) {
       hit_mask = node->isLeaf;
       hit_mask.flip();
+      // bool print = hit_mask.any();
+      // if (print) {
+      //   std::cout << hit_mask.to_string() << " --> ";
+      // }
       DistanceTo<N>(node->bound, ray, t, hit_mask);
+      // if (print) {
+      //   std::cout << hit_mask.to_string() << std::endl;
+      // }
 
       for (i = 0, hits = 0; i < N; ++i) {
         if (hit_mask[i] && (hits++) == 0) first = i; 
       }
 
-      if (hits == 1) {
-        node = &tree.nodes[node->children[first]];
+      if (hits == 1 && N == 1) {
+        node = &tree.nodes[node->groups[first].children[0]];
         continue;
       } else if (hits > 0) {
         for (i = 0, j = 0; i < N; ++i) {
@@ -350,7 +361,9 @@ void Traverse(const BVH<Primitive, Branch, NodeStorage<NodeGroup<N>, PrimitiveSt
         std::sort(ts, ts + hits);
 
         for (i = 0; i < hits; ++i) {
-          stack.push(node->children[ts[i].second]);
+          for (j = 0; j < Branch::NODE; ++j) {
+            stack.push(node->groups[ts[i].second].children[j]);
+          }
         }
       }
     }

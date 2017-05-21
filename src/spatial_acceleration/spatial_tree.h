@@ -14,7 +14,14 @@ class TreeBase {
 public:
   typedef BuildNode<Branch> build_t;
   typedef Primitive prim_t;
-  typedef typename Storage::node_t node_storage_t;
+
+  typedef accel::BranchingFactor<
+    (Branch::NODE + Storage::NODE - 1) / Storage::NODE,
+    (Branch::LEAF + Storage::NODE - 1) / Storage::NODE
+  > StorageBranch;
+
+  typedef typename Storage::node_t::template Impl<StorageBranch> node_storage_t;
+
   typedef typename Storage::prim_t prim_storage_t;
 
   std::vector<node_storage_t> nodes;
